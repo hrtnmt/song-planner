@@ -175,7 +175,9 @@
       }
       .chip.era { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
       .chip.status-want { background: var(--surface-2); }
-      .chip.status-doing { background: var(--warn-soft); color: var(--warn); font-weight: 700; }
+      .chip.status-notstarted { background: var(--surface); color: var(--ink-soft); font-weight: 700; border: 1px solid var(--ink-faint); }
+      .chip.status-reading, .chip.status-doing { background: var(--warn-soft); color: var(--warn); font-weight: 700; }
+      .chip.status-finishing { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
       .chip.status-done { background: var(--ok-soft); color: var(--ok); font-weight: 700; }
       .stars { color: var(--gold); letter-spacing: 2px; font-size: 14px; }
       .stars .off { color: var(--line); }
@@ -456,7 +458,7 @@
       .stat-strip { display: flex; gap: 6px; margin-bottom: 8px; }
       .stat-strip button {
         flex: 1 1 0; min-width: 0; border: 1px solid var(--line); background: var(--surface);
-        border-radius: 999px; padding: 6px 4px; font-size: 12px; font-weight: 500; color: var(--ink-soft);
+        border-radius: 999px; padding: 6px 2px; font-size: 11px; font-weight: 500; color: var(--ink-soft);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
       .stat-strip button b { font-variant-numeric: tabular-nums; margin-left: 2px; }
@@ -494,20 +496,29 @@
       .roadmap-info .legend { margin-bottom: 6px; }
       .roadmap-info .roadmap-help { margin-bottom: 4px; }
 
-      /* --- status look: want / doing / done を見た目で分ける --- */
+      /* --- status look: 段階ごとに見た目で分ける（未着手は薄くしない） --- */
       .card.st-want { border-style: dashed; }
-      .card.st-doing { border-color: var(--gold); background-image: linear-gradient(180deg, var(--warn-soft), transparent 130px); }
+      .card.st-notstarted { border-color: var(--ink-faint); border-width: 1.5px; }
+      .card.st-reading, .card.st-doing { border-color: var(--gold); background-image: linear-gradient(180deg, var(--warn-soft), transparent 130px); }
+      .card.st-finishing { border-color: var(--accent); border-width: 2px; background-image: linear-gradient(180deg, var(--accent-soft), transparent 130px); }
       .card.st-done { background-image: linear-gradient(180deg, var(--ok-soft), transparent 130px); }
       .chip svg { width: 11px; height: 11px; vertical-align: -1px; margin-right: 3px; }
       .rnode.st-want { border-style: dashed; }
-      .rnode.st-doing { border-color: var(--gold); border-width: 2px; background-image: linear-gradient(180deg, var(--warn-soft), transparent 95px); }
+      .rnode.st-notstarted { border-color: var(--ink-faint); }
+      .rnode.st-reading, .rnode.st-doing { border-color: var(--gold); border-width: 2px; background-image: linear-gradient(180deg, var(--warn-soft), transparent 95px); }
+      .rnode.st-finishing { border-color: var(--accent); border-width: 2px; background-image: linear-gradient(180deg, var(--accent-soft), transparent 95px); }
       .rnode.st-done { border-color: var(--ok); }
       .rnode .node-meta { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11px; color: var(--ink-soft); }
       .rnode .node-meta svg { flex: none; }
       .rnode .node-meta .st-label { margin-left: auto; font-weight: 700; white-space: nowrap; }
       .rnode .node-meta .st-label.st-want { color: var(--ink-faint); }
-      .rnode .node-meta .st-label.st-doing { color: var(--warn); }
+      .rnode .node-meta .st-label.st-notstarted { color: var(--ink-soft); }
+      .rnode .node-meta .st-label.st-reading, .rnode .node-meta .st-label.st-doing { color: var(--warn); }
+      .rnode .node-meta .st-label.st-finishing { color: var(--accent); }
       .rnode .node-meta .st-label.st-done { color: var(--ok); }
+      /* 目安日を過ぎても、まだその段階に届いていない曲はグレーアウトしない */
+      .sched-row.estimated.est-overdue { opacity: .92; border-color: var(--warn); }
+      .sched-row.estimated.est-overdue .date { color: var(--warn); font-weight: 700; }
 
       /* --- roadmap overview（全体図） --- */
       .rm-toolbar { flex: none; display: flex; gap: 6px; margin-bottom: 8px; }
@@ -522,8 +533,10 @@
       .ov-leg-item { display: inline-flex; align-items: center; gap: 5px; }
       .ov-leg-item svg { flex: none; }
       .ov-ring { width: 15px; height: 15px; border-radius: 50%; display: inline-block; flex: none; box-sizing: border-box; }
-      .ov-ring.ring-doing { border: 3px solid var(--gold); }
+      .ov-ring.ring-doing, .ov-ring.ring-reading { border: 3px solid var(--gold); }
+      .ov-ring.ring-finishing { border: 3px solid var(--accent); }
       .ov-ring.ring-done { border: 3px solid var(--ok); }
+      .ov-ring.ring-notstarted { border: 3px solid var(--ink-faint); }
       .ov-ring.ring-want { border: 2px dashed var(--ink-faint); }
       .ov-hint { font-size: 12px; color: var(--ink-faint); margin: 0 0 8px; }
       .ov-frame {
@@ -617,10 +630,12 @@
       <!-- ===== list view ===== -->
       <section id="view-list">
         <div class="list-head">
-        <div class="stat-strip" role="group" aria-label="ステータスで絞り込み">
+        <div class="stat-strip" role="group" aria-label="段階で絞り込み">
           <button type="button" data-stat-filter="" aria-pressed="true">すべて<b id="statAll">0</b></button>
           <button type="button" data-stat-filter="want" aria-pressed="false">いつか<b id="statWant">0</b></button>
-          <button type="button" data-stat-filter="doing" aria-pressed="false">練習中<b id="statDoing">0</b></button>
+          <button type="button" data-stat-filter="notstarted" aria-pressed="false">未着手<b id="statNotstarted">0</b></button>
+          <button type="button" data-stat-filter="reading" aria-pressed="false">譜読み<b id="statReading">0</b></button>
+          <button type="button" data-stat-filter="finishing" aria-pressed="false">仕上げ<b id="statFinishing">0</b></button>
           <button type="button" data-stat-filter="done" aria-pressed="false">演奏済み<b id="statDone">0</b></button>
         </div>
         <div class="filters">
@@ -630,10 +645,12 @@
           </div>
           <select id="fGenre" aria-label="ジャンルで絞り込み"></select>
           <select id="fEra" aria-label="時代で絞り込み"></select>
-          <select id="fStatus" aria-label="ステータスで絞り込み">
-            <option value="">ステータス：すべて</option>
+          <select id="fStatus" aria-label="段階で絞り込み">
+            <option value="">段階：すべて</option>
             <option value="want">いつか演奏したい</option>
-            <option value="doing">練習中</option>
+            <option value="notstarted">未着手（まだ始めていない）</option>
+            <option value="reading">譜読み中</option>
+            <option value="finishing">仕上げ中</option>
             <option value="done">演奏済み</option>
           </select>
           <select id="sort" aria-label="並び替え">
@@ -715,7 +732,7 @@
         </div>
         <div class="est-guide" id="estGuide">
           <p><b>薄く点線で表示されるのは「目安」です。</b>締切（譜読み開始日）を設定していない曲も、目安として入れています。内訳は <b>譜読み〜通せるようになるまで 3ヶ月 ＋ 表現の仕上げ 1ヶ月 ＝ 計4ヶ月</b> です。</p>
-          <p>本番だけ設定されている曲は、<b>本番の4ヶ月前</b>を譜読み開始の目安にしています。日程が何もない曲は、ロードマップのつながり（前提の曲が仕上がる頃／この曲を前提にする曲の開始に間に合う頃）から期間を割り出し、つながりがない曲は今から順に取り組む想定で並べています。目安はカレンダーには書き出されません。実際の日程は曲の編集画面で登録してください。</p>
+          <p>目安は<b>曲の段階に合わせて残りの分だけ</b>出ます：未着手の曲は開始から、譜読み中の曲は仕上げ入りから、仕上げ中の曲は仕上げ完了だけです。<b>まだ始めていない曲は、目安の日を過ぎても「過ぎた予定」にはならず、薄くもなりません</b>（「目安を過ぎています」と付いてこれからの予定の先頭に残ります）。本番だけ設定されている曲は、<b>本番の4ヶ月前</b>を開始の目安にしています。目安はカレンダーには書き出されません。段階と実際の日程は曲の編集画面で登録してください。</p>
         </div>
         <div id="schedArea"></div>
         <div class="empty" id="schedEmpty" hidden>
@@ -824,12 +841,15 @@
                 <select id="eGenre"></select>
               </div>
               <div class="field">
-                <label for="eStatus">ステータス</label>
+                <label for="eStatus">段階</label>
                 <select id="eStatus">
                   <option value="want">いつか演奏したい</option>
-                  <option value="doing">練習中</option>
+                  <option value="notstarted">未着手（まだ始めていない）</option>
+                  <option value="reading">譜読み中（通せるようになるまで）</option>
+                  <option value="finishing">仕上げ中（表現の仕上げ）</option>
                   <option value="done">演奏済み</option>
                 </select>
+                <p class="hint" style="margin:0">「予定」タブの目安は、この段階に合わせて残りの分だけ表示されます。譜読み中なら開始の目安は出ず、仕上げ中なら仕上げ完了の目安だけが出ます。</p>
               </div>
               <div class="field">
                 <label>弾きたい度</label>
@@ -1012,10 +1032,12 @@
         <div id="pieceDetail"></div>
       </div>
       <div class="dlg-foot">
-        <label class="pd-status-label">ステータス
-          <select id="pieceStatusSel" aria-label="ステータスを変更">
+        <label class="pd-status-label">段階
+          <select id="pieceStatusSel" aria-label="段階を変更">
             <option value="want">いつか演奏したい</option>
-            <option value="doing">練習中</option>
+            <option value="notstarted">未着手（まだ始めていない）</option>
+            <option value="reading">譜読み中</option>
+            <option value="finishing">仕上げ中</option>
             <option value="done">演奏済み</option>
           </select>
         </label>
@@ -1035,7 +1057,20 @@
       var ERAS = ["バロック", "古典派", "ロマン派", "近現代", "その他"];
       var ERA_ORDER = { "バロック": 0, "古典派": 1, "ロマン派": 2, "近現代": 3, "その他": 4, "": 5 };
       var GENRES = ["ピアノ", "吹奏楽", "室内楽", "管弦楽", "合唱", "その他"];
-      var STATUS_LABEL = { want: "いつか演奏したい", doing: "練習中", done: "演奏済み" };
+      var STATUS_LABEL = { want: "いつか演奏したい", notstarted: "未着手", reading: "譜読み中", finishing: "仕上げ中", done: "演奏済み" };
+      var STATUS_KEYS = ["want", "notstarted", "reading", "finishing", "done"];
+      /* 旧データの「練習中（doing）」は「譜読み中」へ引き継ぐ。未知の値は「いつか」にする */
+      function normalizeStatus(s) {
+        if (s === "doing") return "reading";
+        return STATUS_LABEL[s] ? s : "want";
+      }
+      /* その段階ですでに過ぎている目安の節目か（est-start は譜読みに入れば過ぎている等） */
+      function estMilestoneReached(kind, status) {
+        if (kind === "est-start") return status === "reading" || status === "finishing" || status === "done";
+        if (kind === "est-polish") return status === "finishing" || status === "done";
+        if (kind === "est-finish") return status === "done";
+        return false;
+      }
       var PTINA_SEARCH = "https://enc.piano.or.jp/search?key=";
 
       var COMPOSER_ERA = [
@@ -1069,6 +1104,7 @@
       }
       function normalizeData(s) {
         var pieces = s && Array.isArray(s.pieces) ? s.pieces : [];
+        pieces.forEach(function (p) { if (p) p.status = normalizeStatus(p.status); });
         var workspaces = [];
         if (s && Array.isArray(s.workspaces)) {
           s.workspaces.forEach(function (w) {
@@ -1379,9 +1415,18 @@
           if (p.start) return addMonthsStr(p.start, 4);
           return "";
         }
-        /* --- 1) 本番だけ／期限だけある曲：4ヶ月前を開始目安にする --- */
+        /* --- 1) 本番だけ／期限だけある曲：4ヶ月前を開始目安にする。
+               譜読み開始日が実際にある曲は、その日から残りの目安を出す --- */
         state.pieces.forEach(function (p) {
-          if (p.status === "done" || p.start) return;
+          if (p.status === "done") return;
+          if (p.start) {
+            if (!p.deadline && !earliestConcertDate(p)) {
+              setEst(p, p.start, "actual-start",
+                "実際の譜読み開始日から数えた目安（譜読み3ヶ月＋仕上げ1ヶ月）",
+                addMonthsStr(p.start, 4), addMonthsStr(p.start, 3));
+            }
+            return;
+          }
           var c = earliestConcert(p);
           if (c) {
             setEst(p, addMonthsStr(c.date, -4), "concert",
@@ -1460,9 +1505,13 @@
               preDates.sort();
               setEst(p, preDates[preDates.length - 1], "chain-forward",
                 "前提の曲が仕上がる頃から（譜読み3ヶ月＋仕上げ1ヶ月）");
-            } else if (p.status === "doing") {
+            } else if (p.status === "reading") {
               setEst(p, todayStr, "free",
-                "練習中だが日程が未設定のため、今から仕上げまで4ヶ月と想定（譜読み3ヶ月＋仕上げ1ヶ月）");
+                "譜読み中だが日程が未設定のため、今から仕上げまで4ヶ月と想定（譜読み3ヶ月＋仕上げ1ヶ月）");
+            } else if (p.status === "finishing") {
+              /* 仕上げ中は残り1ヶ月だけ：開始を3ヶ月前に置くと完了が今から1ヶ月後になる */
+              setEst(p, addMonthsStr(todayStr, -3), "free",
+                "仕上げ中だが日程が未設定のため、仕上げ完了まであと1ヶ月と想定");
             } else {
               var start = addMonthsStr(todayStr, rootSlot * 4);
               rootSlot++;
@@ -1481,10 +1530,17 @@
         Object.keys(est).forEach(function (id) {
           var p = byId(id); if (!p) return;
           var e = est[id];
-          evs.push({ pieceId: id, kind: "est-start", label: "譜読み開始（目安）", name: "", date: e.start, est: true, reason: e.reason, source: e.source });
-          evs.push({ pieceId: id, kind: "est-polish", label: "表現の仕上げ入り（目安）", name: "", date: e.polish, est: true, reason: "譜読み開始（目安）から3ヶ月：ここから仕上げの1ヶ月", source: e.source });
+          /* 段階に合わせて、すでに過ぎた節目の目安は出さない。
+             譜読み中なら開始の目安は不要、仕上げ中なら仕上げ完了だけが残る。
+             実際の開始日がある曲の開始は確定側で表示されるので重ねない */
+          if (!estMilestoneReached("est-start", p.status) && e.source !== "actual-start") {
+            evs.push({ pieceId: id, kind: "est-start", label: "譜読み開始（目安）", name: "", date: e.start, est: true, reason: e.reason, source: e.source });
+          }
+          if (!estMilestoneReached("est-polish", p.status)) {
+            evs.push({ pieceId: id, kind: "est-polish", label: "表現の仕上げ入り（目安）", name: "", date: e.polish, est: true, reason: e.source === "actual-start" ? "実際の譜読み開始から3ヶ月：ここから仕上げの1ヶ月" : "譜読み開始（目安）から3ヶ月：ここから仕上げの1ヶ月", source: e.source });
+          }
           /* 本番がそのまま仕上がりの日になる場合は、本番（確定）側で表示されるので重ねない */
-          if (e.source !== "concert") {
+          if (e.source !== "concert" && !estMilestoneReached("est-finish", p.status)) {
             evs.push({ pieceId: id, kind: "est-finish", label: "仕上げ完了（目安）", name: "", date: e.finish, est: true, reason: e.reason, source: e.source });
           }
         });
@@ -1758,9 +1814,12 @@
       }
       var STATUS_ICON = {
         want: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
-        doing: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 18.5a3 3 0 1 1-2-2.83V5.2c0-.4.27-.76.65-.88l9-2.6A1 1 0 0 1 18 2.68v11.82a3 3 0 1 1-2-2.83V6.1l-7 2.02v10.38z"/></svg>',
+        notstarted: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
+        reading: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 18.5a3 3 0 1 1-2-2.83V5.2c0-.4.27-.76.65-.88l9-2.6A1 1 0 0 1 18 2.68v11.82a3 3 0 1 1-2-2.83V6.1l-7 2.02v10.38z"/></svg>',
+        finishing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12.5l-2.8 4L17.5 12H5"/></svg>',
         done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg>'
       };
+      STATUS_ICON.doing = STATUS_ICON.reading;
       function starsHtml(w) {
         var s = "";
         for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= w ? "" : "off") + '">★</span>';
@@ -1808,8 +1867,8 @@
             ptinaLink +
             (ptinaMeta.length ? '<span class="chip">' + ptinaMeta.join(" ・ ") + "</span>" : "") +
             '<span class="spacer"></span>' +
-            '<select class="status-select" data-act="status" aria-label="ステータスを変更">' +
-              ["want", "doing", "done"].map(function (k) { return '<option value="' + k + '"' + (p.status === k ? " selected" : "") + ">" + STATUS_LABEL[k] + "</option>"; }).join("") +
+            '<select class="status-select" data-act="status" aria-label="段階を変更">' +
+              STATUS_KEYS.map(function (k) { return '<option value="' + k + '"' + (p.status === k ? " selected" : "") + ">" + STATUS_LABEL[k] + "</option>"; }).join("") +
             "</select>" +
             '<button type="button" class="iconbtn" data-act="edit">編集</button>' +
           "</div>" +
@@ -1822,10 +1881,10 @@
         $("#noMatch").hidden = !(state.pieces.length > 0 && list.length === 0);
         $("#count").textContent = state.pieces.length === 0 ? "" :
           "全" + state.pieces.length + "曲" + (list.length !== state.pieces.length ? "（" + list.length + "曲を表示）" : "");
-        var stc = { want: 0, doing: 0, done: 0 };
+        var stc = { want: 0, notstarted: 0, reading: 0, finishing: 0, done: 0 };
         state.pieces.forEach(function (x) { if (stc[x.status] != null) stc[x.status]++; });
         var setTxt = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
-        setTxt("statAll", state.pieces.length); setTxt("statWant", stc.want); setTxt("statDoing", stc.doing); setTxt("statDone", stc.done);
+        setTxt("statAll", state.pieces.length); setTxt("statWant", stc.want); setTxt("statNotstarted", stc.notstarted); setTxt("statReading", stc.reading); setTxt("statFinishing", stc.finishing); setTxt("statDone", stc.done);
         var sfv = $("#fStatus").value;
         document.querySelectorAll("[data-stat-filter]").forEach(function (b) {
           b.setAttribute("aria-pressed", b.getAttribute("data-stat-filter") === sfv ? "true" : "false");
@@ -1884,8 +1943,10 @@
         legend.innerHTML = ["バロック", "古典派", "ロマン派", "近現代", "その他", "未設定"].filter(function (e) { return counts[e]; }).map(function (e) {
           return '<span class="ov-leg-item">' + eraShapeSvg(e === "未設定" ? "" : e, 15) + esc(e) + " " + counts[e] + "曲</span>";
         }).join("") +
-          '<span class="ov-leg-item"><span class="ov-ring ring-doing"></span>練習中</span>' +
+          '<span class="ov-leg-item"><span class="ov-ring ring-reading"></span>譜読み中</span>' +
+          '<span class="ov-leg-item"><span class="ov-ring ring-finishing"></span>仕上げ中</span>' +
           '<span class="ov-leg-item"><span class="ov-ring ring-done"></span>演奏済み</span>' +
+          '<span class="ov-leg-item"><span class="ov-ring ring-notstarted"></span>未着手</span>' +
           '<span class="ov-leg-item"><span class="ov-ring ring-want"></span>いつか演奏したい</span>';
         var parts = [];
         /* 線とAND囲み（通常表示と同じ規則：演奏済み発は実線、それ以外は点線） */
@@ -1928,8 +1989,10 @@
           var pp = pos[p.id]; if (!pp) return;
           var cx = pp.x + 108, cy = pp.y + pp.h / 2, r = 25;
           var ring;
-          if (p.status === "doing") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--gold)" stroke-width="5"/>';
+          if (p.status === "reading") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--gold)" stroke-width="5"/>';
+          else if (p.status === "finishing") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--accent)" stroke-width="5"/>';
           else if (p.status === "done") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--ok)" stroke-width="5"/>';
+          else if (p.status === "notstarted") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--ink-faint)" stroke-width="3.5"/>';
           else ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--ink-faint)" stroke-width="2.5" stroke-dasharray="5 5"/>';
           var label = p.title.length > 8 ? p.title.slice(0, 8) + "…" : p.title;
           parts.push('<g class="ov-node" data-ov="' + p.id + '" tabindex="0" role="button" aria-label="' + esc(p.title) + "（詳細を開く）\">" +
@@ -2295,19 +2358,25 @@
         $("#schedEmpty").hidden = evs.length !== 0;
         var guide = document.getElementById("estGuide");
         if (guide) guide.hidden = !evs.some(function (ev) { return ev.est; });
-        var upcoming = evs.filter(function (ev) { return daysLeft(ev.date) >= 0; });
-        var past = evs.filter(function (ev) { return daysLeft(ev.date) < 0; }).reverse();
+        /* 目安は「まだその節目に届いていない」ものだけが残っている（段階で絞り込み済み）。
+           だから目安の日が過ぎていても、それは終わった予定ではない：
+           「過ぎた予定」へ入れて薄くする（グレーアウト）のをやめ、
+           これからの予定の側に、目安を過ぎていることを明示して残す */
+        var upcoming = evs.filter(function (ev) { return ev.est || daysLeft(ev.date) >= 0; });
+        var past = evs.filter(function (ev) { return !ev.est && daysLeft(ev.date) < 0; }).reverse();
         function row(ev, isPast) {
           var p = byId(ev.pieceId); if (!p) return "";
           if (ev.est) {
-            return '<div class="sched-row estimated' + (isPast ? " past" : "") + '">' +
+            var estOverdue = daysLeft(ev.date) < 0;
+            return '<div class="sched-row estimated' + (estOverdue ? " est-overdue" : "") + '">' +
               '<span class="date">' + fmtDate(ev.date) + "</span>" +
               '<span class="kind est">' + esc(ev.label) + "</span>" +
               '<span class="what"><span class="title">' + esc(p.title) + "</span>" +
                 (p.composer ? "（" + esc(p.composer) + "）" : "") +
+                ' <span class="chip status-' + p.status + '">' + STATUS_LABEL[p.status] + "</span>" +
                 (ev.reason ? '<span class="est-reason">' + esc(ev.reason) + "</span>" : "") + "</span>" +
               '<span class="est-tag">目安</span>' +
-              (isPast ? '<span class="days-badge">' + Math.abs(daysLeft(ev.date)) + "日前</span>" : daysBadge(daysLeft(ev.date))) +
+              (estOverdue ? '<span class="days-badge overdue">目安を' + Math.abs(daysLeft(ev.date)) + "日過ぎています</span>" : daysBadge(daysLeft(ev.date))) +
             "</div>";
           }
           return '<div class="sched-row' + (isPast ? " past" : "") + '">' +
@@ -2953,7 +3022,7 @@
               if (!p.id) p.id = uid();
               if (!p.createdAt) p.createdAt = Date.now();
               p.want = [1, 2, 3].indexOf(p.want) !== -1 ? p.want : 1;
-              p.status = STATUS_LABEL[p.status] ? p.status : "want";
+              p.status = normalizeStatus(p.status);
               p.concerts = Array.isArray(p.concerts) ? p.concerts : [];
               p.prereqGroups = Array.isArray(p.prereqGroups) ? p.prereqGroups : [];
             });
