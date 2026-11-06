@@ -28,6 +28,11 @@
         --warn-soft: #faecd9;
         --danger: #b3261e;
         --danger-soft: #f9e3e1;
+        --era-baroque: #8a5a2b;
+        --era-classical: #33679a;
+        --era-romantic: #a52a44;
+        --era-modern: #3d7a44;
+        --era-other: #7d7668;
         --shadow: 0 1px 2px rgba(35, 32, 27, .06), 0 4px 14px rgba(35, 32, 27, .05);
         --radius: 10px;
       }
@@ -50,6 +55,11 @@
           --warn-soft: #3a2c1a;
           --danger: #f0928a;
           --danger-soft: #3d2321;
+          --era-baroque: #c99a5b;
+          --era-classical: #6fa8cf;
+          --era-romantic: #d97b96;
+          --era-modern: #7fb069;
+          --era-other: #9a958a;
           --shadow: 0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.3);
         }
       }
@@ -464,6 +474,58 @@
       .roadmap-info .legend { margin-bottom: 6px; }
       .roadmap-info .roadmap-help { margin-bottom: 4px; }
 
+      /* --- status look: want / doing / done を見た目で分ける --- */
+      .card.st-want { border-style: dashed; }
+      .card.st-doing { border-color: var(--gold); background-image: linear-gradient(180deg, var(--warn-soft), transparent 130px); }
+      .card.st-done { background-image: linear-gradient(180deg, var(--ok-soft), transparent 130px); }
+      .chip svg { width: 11px; height: 11px; vertical-align: -1px; margin-right: 3px; }
+      .rnode.st-want { border-style: dashed; }
+      .rnode.st-doing { border-color: var(--gold); border-width: 2px; background-image: linear-gradient(180deg, var(--warn-soft), transparent 95px); }
+      .rnode.st-done { border-color: var(--ok); }
+      .rnode .node-meta { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11px; color: var(--ink-soft); }
+      .rnode .node-meta svg { flex: none; }
+      .rnode .node-meta .st-label { margin-left: auto; font-weight: 700; white-space: nowrap; }
+      .rnode .node-meta .st-label.st-want { color: var(--ink-faint); }
+      .rnode .node-meta .st-label.st-doing { color: var(--warn); }
+      .rnode .node-meta .st-label.st-done { color: var(--ok); }
+
+      /* --- roadmap overview（全体図） --- */
+      .rm-toolbar { flex: none; display: flex; gap: 6px; margin-bottom: 8px; }
+      .rm-toolbar button {
+        flex: 1 1 0; border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+        padding: 6px 10px; font-size: 12.5px; font-weight: 500; color: var(--ink-soft);
+      }
+      .rm-toolbar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+      @media (prefers-color-scheme: dark) { .rm-toolbar button[aria-pressed="true"] { color: #1d1216; } }
+      #overviewWrap { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      .ov-legend { display: flex; flex-wrap: wrap; gap: 5px 14px; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; align-items: center; }
+      .ov-leg-item { display: inline-flex; align-items: center; gap: 5px; }
+      .ov-leg-item svg { flex: none; }
+      .ov-ring { width: 15px; height: 15px; border-radius: 50%; display: inline-block; flex: none; box-sizing: border-box; }
+      .ov-ring.ring-doing { border: 3px solid var(--gold); }
+      .ov-ring.ring-done { border: 3px solid var(--ok); }
+      .ov-ring.ring-want { border: 2px dashed var(--ink-faint); }
+      .ov-hint { font-size: 12px; color: var(--ink-faint); margin: 0 0 8px; }
+      .ov-frame {
+        border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+        box-shadow: var(--shadow); padding: 12px 10px;
+      }
+      .ov-node { cursor: pointer; }
+      .ov-node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+      /* --- piece detail (全体図タップ) --- */
+      .pd-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+      .pd-head svg { flex: none; }
+      .pd-head h2 { margin: 0; }
+      .pd-composer { color: var(--ink-soft); font-size: 13px; }
+      .pd-dates { display: grid; gap: 4px; font-size: 13.5px; margin: 10px 0 2px; }
+      .pd-dates b { font-weight: 700; }
+      #pieceDlg .memo { white-space: pre-wrap; color: var(--ink-soft); font-size: 13.5px; margin: 8px 0 0; }
+      #pieceDlg .prereq-note { font-size: 13px; color: var(--ink-soft); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 10px; }
+      #pieceDlg .prereq-note b { color: var(--ink); }
+      .pd-status-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+      .pd-status-label select { padding: 6px 8px; }
+
       /* --- schedule compact --- */
       h2.section { font-size: 16px; margin: 14px 0 8px; }
       .sched-row { padding: 9px 12px; gap: 8px; }
@@ -599,6 +661,15 @@
           <span><span class="swatch"></span>単独の前提（1曲だけ）</span>
         </div>
         <p class="roadmap-help">このワークスペースに<b>インポートした曲だけ</b>が表示されます（曲が増えても、作業ごとに分けて作れます）。カード両端の<b>丸い点</b>を押したままドラッグすると、<b>曲線がカーソル／指に追従</b>して伸び、別のカードの上で離すとその向き（つかんだカード → 離したカード）に矢印がつながります。線は<b>点の中心から点の中心へ</b>ベジエ曲線で結ばれます。線がすでにある相手にもう一度つなぐか、線をクリックすると外れます。<b>カード自体をドラッグして別のカードに重ねる</b>とANDグループにまとまり（ドラッグ中は出口の点から金色のガイド線が出ます）、別々に並列でつなぐとORになります。カードを押すと編集できます。</p></details>
+        <div class="rm-toolbar" role="group" aria-label="ロードマップの表示切替">
+          <button type="button" id="rmModeNormal" aria-pressed="true">通常表示</button>
+          <button type="button" id="rmModeOverview" aria-pressed="false">全体図（時代で色分け）</button>
+        </div>
+        <div id="overviewWrap" hidden>
+          <div class="ov-legend" id="ovLegend"></div>
+          <p class="ov-hint">図形は時代、輪の色はステータスを表します。図形をタップすると曲の詳細が開きます。</p>
+          <div class="ov-frame" id="overviewSvgWrap"></div>
+        </div>
         <div class="roadmap-frame" id="roadmapFrame">
           <div class="roadmap-canvas" id="roadmapCanvas"></div>
         </div>
@@ -908,6 +979,25 @@
       <div class="dlg-foot">
         <button type="button" class="btn" id="confirmNo">やめる</button>
         <button type="button" class="btn danger" id="confirmYes">削除する</button>
+      </div>
+    </dialog>
+
+    <!-- ===== piece detail dialog (全体図タップ) ===== -->
+    <dialog id="pieceDlg">
+      <div class="dlg-body">
+        <div id="pieceDetail"></div>
+      </div>
+      <div class="dlg-foot">
+        <label class="pd-status-label">ステータス
+          <select id="pieceStatusSel" aria-label="ステータスを変更">
+            <option value="want">いつか演奏したい</option>
+            <option value="doing">練習中</option>
+            <option value="done">演奏済み</option>
+          </select>
+        </label>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="pieceCloseBtn">閉じる</button>
+        <button type="button" class="btn primary" id="pieceEditBtn">編集する</button>
       </div>
     </dialog>
 
@@ -1470,6 +1560,11 @@
         });
         return list;
       }
+      var STATUS_ICON = {
+        want: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+        doing: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 18.5a3 3 0 1 1-2-2.83V5.2c0-.4.27-.76.65-.88l9-2.6A1 1 0 0 1 18 2.68v11.82a3 3 0 1 1-2-2.83V6.1l-7 2.02v10.38z"/></svg>',
+        done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg>'
+      };
       function starsHtml(w) {
         var s = "";
         for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= w ? "" : "off") + '">★</span>';
@@ -1501,13 +1596,13 @@
         var ptinaMeta = [];
         if (p.ptinaStep) ptinaMeta.push("難易度 " + esc(p.ptinaStep));
         if (p.ptinaTime) ptinaMeta.push(esc(p.ptinaTime));
-        return '<article class="card" data-id="' + p.id + '">' +
+        return '<article class="card st-' + p.status + '" data-id="' + p.id + '">' +
           (p.composer ? '<div class="composer">' + esc(p.composer) + "</div>" : "") +
           "<h3>" + esc(p.title) + "</h3>" +
           '<div class="chips">' +
             (p.era ? '<span class="chip era">' + esc(p.era) + (p.year ? " ・ " + p.year + "年" : "") + "</span>" : (p.year ? '<span class="chip">' + p.year + "年</span>" : "")) +
             (p.genre ? '<span class="chip">' + esc(p.genre) + "</span>" : "") +
-            '<span class="chip status-' + p.status + '">' + STATUS_LABEL[p.status] + "</span>" +
+            '<span class="chip status-' + p.status + '">' + (STATUS_ICON[p.status] || "") + STATUS_LABEL[p.status] + "</span>" +
           "</div>" +
           "<div>" + starsHtml(p.want) + "</div>" +
           (p.memo ? '<p class="memo">' + esc(p.memo) + "</p>" : "") +
@@ -1539,6 +1634,150 @@
         document.querySelectorAll("[data-stat-filter]").forEach(function (b) {
           b.setAttribute("aria-pressed", b.getAttribute("data-stat-filter") === sfv ? "true" : "false");
         });
+      }
+
+      /* ================= era shapes（音楽史の時代を図形と色で表す） ================= */
+      var ERA_SHAPE = { "バロック": "circle", "古典派": "square", "ロマン派": "diamond", "近現代": "triangle", "その他": "hexagon" };
+      var ERA_COLOR = { "バロック": "var(--era-baroque)", "古典派": "var(--era-classical)", "ロマン派": "var(--era-romantic)", "近現代": "var(--era-modern)", "その他": "var(--era-other)" };
+      function eraColor(era) { return ERA_COLOR[era] || "var(--era-other)"; }
+      /* 小さい時代マーク（20x20座標系のインラインSVG）。ノード・凡例・詳細で共用 */
+      function eraShapeSvg(era, size) {
+        var s = size || 14, c = eraColor(era), shape = ERA_SHAPE[era] || "hexagon", inner;
+        if (shape === "circle") inner = '<circle cx="10" cy="10" r="7.5" fill="' + c + '"/>';
+        else if (shape === "square") inner = '<rect x="3" y="3" width="14" height="14" rx="2.5" fill="' + c + '"/>';
+        else if (shape === "diamond") inner = '<polygon points="10,1.8 18.2,10 10,18.2 1.8,10" fill="' + c + '"/>';
+        else if (shape === "triangle") inner = '<polygon points="10,2.6 18,17 2,17" fill="' + c + '"/>';
+        else inner = '<polygon points="10,1.8 17.1,5.9 17.1,14.1 10,18.2 2.9,14.1 2.9,5.9" fill="' + c + '"/>';
+        return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 20 20" aria-hidden="true">' + inner + "</svg>";
+      }
+      /* 全体図用：中心(cx,cy)・半径rで時代図形を描くSVG断片 */
+      function ovShapeStr(era, cx, cy, r) {
+        var c = eraColor(era), shape = ERA_SHAPE[era] || "hexagon";
+        function pts(list) { return list.map(function (pt) { return pt[0].toFixed(1) + "," + pt[1].toFixed(1); }).join(" "); }
+        if (shape === "circle") return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c + '"/>';
+        if (shape === "square") { var w = r * 1.62; return '<rect x="' + (cx - w / 2) + '" y="' + (cy - w / 2) + '" width="' + w + '" height="' + w + '" rx="' + (r * 0.22) + '" fill="' + c + '"/>'; }
+        if (shape === "diamond") return '<polygon points="' + pts([[cx, cy - r], [cx + r, cy], [cx, cy + r], [cx - r, cy]]) + '" fill="' + c + '"/>';
+        if (shape === "triangle") return '<polygon points="' + pts([[cx, cy - r], [cx + r * 0.94, cy + r * 0.78], [cx - r * 0.94, cy + r * 0.78]]) + '" fill="' + c + '"/>';
+        var hp = [];
+        for (var i = 0; i < 6; i++) { var a = (Math.PI / 3) * i - Math.PI / 2; hp.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+        return '<polygon points="' + pts(hp) + '" fill="' + c + '"/>';
+      }
+
+      /* ================= roadmap overview（全体図） ================= */
+      var overviewMode = false;
+      var lastLayout = null; /* renderRoadmap が実測した配置 {W,H,pos,outC,inC,pieces,wsSet} */
+      function applyRmMode() {
+        var has = !!(lastLayout && lastLayout.pieces.length > 0);
+        var frame = document.getElementById("roadmapFrame");
+        var ov = document.getElementById("overviewWrap");
+        var bn = document.getElementById("rmModeNormal"), bo = document.getElementById("rmModeOverview");
+        if (bn) bn.setAttribute("aria-pressed", overviewMode ? "false" : "true");
+        if (bo) bo.setAttribute("aria-pressed", overviewMode ? "true" : "false");
+        if (ov) ov.hidden = !(overviewMode && has);
+        if (frame) frame.style.display = (overviewMode || !has) ? "none" : "";
+      }
+      function renderOverview() {
+        var legend = document.getElementById("ovLegend");
+        var wrap = document.getElementById("overviewSvgWrap");
+        if (!legend || !wrap) return;
+        if (!lastLayout || lastLayout.pieces.length === 0) { legend.innerHTML = ""; wrap.innerHTML = ""; return; }
+        var L = lastLayout, pos = L.pos, outC = L.outC, inC = L.inC;
+        /* 凡例：時代ごとの図形・色・曲数 ＋ ステータスの輪 */
+        var counts = {};
+        L.pieces.forEach(function (p) { var e = p.era || "未設定"; counts[e] = (counts[e] || 0) + 1; });
+        legend.innerHTML = ["バロック", "古典派", "ロマン派", "近現代", "その他", "未設定"].filter(function (e) { return counts[e]; }).map(function (e) {
+          return '<span class="ov-leg-item">' + eraShapeSvg(e === "未設定" ? "" : e, 15) + esc(e) + " " + counts[e] + "曲</span>";
+        }).join("") +
+          '<span class="ov-leg-item"><span class="ov-ring ring-doing"></span>練習中</span>' +
+          '<span class="ov-leg-item"><span class="ov-ring ring-done"></span>演奏済み</span>' +
+          '<span class="ov-leg-item"><span class="ov-ring ring-want"></span>いつか演奏したい</span>';
+        var parts = [];
+        /* 線とAND囲み（通常表示と同じ規則：演奏済み発は実線、それ以外は点線） */
+        L.pieces.forEach(function (p) {
+          var target = inC[p.id]; if (!target) return;
+          var gs = wsCleanGroups(p, L.wsSet);
+          var multi = gs.length > 1;
+          gs.forEach(function (g) {
+            var members = g.filter(function (id) { return outC[id]; });
+            if (members.length === 0) return;
+            var isAnd = members.length > 1;
+            var color = multi ? "var(--gold)" : (isAnd ? "var(--accent)" : "var(--ink-faint)");
+            if (isAnd) {
+              var maxOutX = Math.max.apply(null, members.map(function (id) { return outC[id].x; }));
+              var J = { x: maxOutX + (target.x - maxOutX) * 0.5, y: target.y };
+              var xs = members.map(function (id) { return pos[id].x; }).concat([J.x]);
+              var ys = members.map(function (id) { return pos[id].y; }).concat([J.y]);
+              var xe = members.map(function (id) { return pos[id].x + 216; }).concat([J.x]);
+              var ye = members.map(function (id) { return pos[id].y + pos[id].h; }).concat([J.y]);
+              var bx = Math.min.apply(null, xs) - 14, by = Math.min.apply(null, ys) - 20;
+              var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
+              var bh = Math.max.apply(null, ye) - Math.min.apply(null, ys) + 34;
+              parts.push('<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.5" stroke="var(--accent)" stroke-width="1.5"/>');
+              members.forEach(function (id) {
+                var b = bezierD(outC[id], J);
+                parts.push('<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (isDoneId(id) ? "" : ' stroke-dasharray="7 5"') + "/>");
+              });
+              var allDone = members.every(isDoneId);
+              var trunk = bezierD(J, target);
+              parts.push('<path d="' + trunk.d + '" fill="none" stroke="' + color + '" stroke-width="3.4"' + (allDone ? "" : ' stroke-dasharray="7 5"') + "/>");
+              parts.push('<circle cx="' + J.x + '" cy="' + J.y + '" r="5" fill="' + color + '"/>');
+            } else {
+              var b1 = bezierD(outC[members[0]], target);
+              parts.push('<path d="' + b1.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (isDoneId(members[0]) ? "" : ' stroke-dasharray="7 5"') + "/>");
+            }
+          });
+        });
+        /* 曲マーカー：時代の図形＋色、輪はステータス。タップで詳細 */
+        L.pieces.forEach(function (p) {
+          var pp = pos[p.id]; if (!pp) return;
+          var cx = pp.x + 108, cy = pp.y + pp.h / 2, r = 25;
+          var ring;
+          if (p.status === "doing") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--gold)" stroke-width="5"/>';
+          else if (p.status === "done") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--ok)" stroke-width="5"/>';
+          else ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--ink-faint)" stroke-width="2.5" stroke-dasharray="5 5"/>';
+          var label = p.title.length > 8 ? p.title.slice(0, 8) + "…" : p.title;
+          parts.push('<g class="ov-node" data-ov="' + p.id + '" tabindex="0" role="button" aria-label="' + esc(p.title) + "（詳細を開く）\">" +
+            '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 22) + '" fill="transparent"/>' +
+            ring + ovShapeStr(p.era, cx, cy, r) +
+            '<text x="' + cx + '" y="' + (cy + r + 34) + '" text-anchor="middle" font-size="23" fill="var(--ink-soft)">' + esc(label) + "</text></g>");
+        });
+        wrap.innerHTML = '<svg viewBox="0 0 ' + L.W + " " + L.H + '" width="100%" aria-label="ロードマップ全体図" style="display:block;height:auto">' + parts.join("") + "</svg>";
+      }
+
+      /* ================= piece detail（全体図タップで開く） ================= */
+      var detailId = null;
+      function renderPieceDetail() {
+        var p = byId(detailId); if (!p) return;
+        var box = document.getElementById("pieceDetail"); if (!box) return;
+        var dates = pieceEvents(p).map(function (ev) {
+          var label = ev.kind === "concert" ? "本番" + (ev.name ? "「" + esc(ev.name) + "」" : "") : esc(ev.label);
+          return "<div>" + label + "：<b>" + fmtDate(ev.date) + "</b></div>";
+        }).join("");
+        var ptinaMeta = [];
+        if (p.ptinaStep) ptinaMeta.push("難易度 " + esc(p.ptinaStep));
+        if (p.ptinaTime) ptinaMeta.push(esc(p.ptinaTime));
+        box.innerHTML =
+          '<div class="pd-head">' + eraShapeSvg(p.era, 32) + "<div><h2>" + esc(p.title) + "</h2>" +
+            (p.composer ? '<div class="pd-composer">' + esc(p.composer) + "</div>" : "") + "</div></div>" +
+          '<div class="chips">' +
+            (p.era ? '<span class="chip era">' + esc(p.era) + (p.year ? " ・ " + p.year + "年" : "") + "</span>" : (p.year ? '<span class="chip">' + p.year + "年</span>" : "")) +
+            (p.genre ? '<span class="chip">' + esc(p.genre) + "</span>" : "") +
+            '<span class="chip status-' + p.status + '">' + (STATUS_ICON[p.status] || "") + STATUS_LABEL[p.status] + "</span>" +
+            (ptinaMeta.length ? '<span class="chip">' + ptinaMeta.join(" ・ ") + "</span>" : "") +
+          "</div>" +
+          '<div style="margin-top:6px">' + starsHtml(p.want) + "</div>" +
+          (dates ? '<div class="pd-dates">' + dates + "</div>" : "") +
+          prereqNote(p) +
+          (p.memo ? '<p class="memo">' + esc(p.memo) + "</p>" : "");
+        var sel = document.getElementById("pieceStatusSel");
+        if (sel) sel.value = p.status;
+      }
+      function openPieceDetail(id) {
+        if (!byId(id)) return;
+        detailId = id;
+        renderPieceDetail();
+        var dlg = document.getElementById("pieceDlg");
+        if (dlg && !dlg.open) dlg.showModal();
       }
 
       /* ================= rendering: roadmap ================= */
@@ -1590,7 +1829,7 @@
         $("#roadmapEmpty").hidden = allPieces.length !== 0;
         $("#wsEmpty").hidden = !(allPieces.length !== 0 && pieces.length === 0);
         $("#roadmapFrame").style.display = pieces.length === 0 ? "none" : "";
-        if (pieces.length === 0) { canvas.innerHTML = ""; return; }
+        if (pieces.length === 0) { canvas.innerHTML = ""; lastLayout = null; renderOverview(); applyRmMode(); return; }
         var depths = computeDepthsFor(pieces, wsSet);
         var NODE_W = 216, GAP_X = 148, GAP_Y = 44, PAD = 38;
         var byDepth = {};
@@ -1617,12 +1856,14 @@
           if (p.status === "done") { badge = '<span class="badge done">演奏済み</span>'; cls = " is-done"; }
           else if (wsReady) { badge = '<span class="badge ready">今取り組める</span>'; cls = " is-ready"; }
           else { badge = '<span class="badge wait">前提待ち</span>'; }
-          return '<div class="rnode' + cls + '" data-node="' + p.id + '" role="button" tabindex="0" aria-label="' + esc(p.title) + '（押すと編集）" style="left:' + x + 'px;top:0px">' +
+          return '<div class="rnode' + cls + " st-" + p.status + '" data-node="' + p.id + '" role="button" tabindex="0" aria-label="' + esc(p.title) + '（押すと編集）" style="left:' + x + 'px;top:0px">' +
             '<span class="port port-in" data-port="' + p.id + '" aria-hidden="true"></span>' +
             '<span class="port port-out" data-port="' + p.id + '" aria-hidden="true"></span>' +
             '<span class="step">STEP ' + (d + 1) + "</span>" +
             '<span class="t" style="display:block">' + esc(p.title) + "</span>" +
             (p.composer ? '<span class="c">' + esc(p.composer) + "</span>" : "") +
+            '<span class="node-meta">' + (p.era ? eraShapeSvg(p.era, 13) + "<span>" + esc(p.era) + "</span>" : "<span></span>") +
+              '<span class="st-label st-' + p.status + '">' + STATUS_LABEL[p.status] + "</span></span>" +
             "<br />" + badge + preqSummary(p) + "</div>";
         }).join("");
         canvas.style.width = W + "px";
@@ -1716,6 +1957,10 @@
           });
         });
         canvas.insertAdjacentHTML("afterbegin", '<svg width="' + W + '" height="' + H + '" aria-hidden="true">' + enclosures + paths + "</svg>");
+        /* 全体図はこの実測レイアウトをそのまま縮小して描く */
+        lastLayout = { W: W, H: H, pos: pos, outC: outC, inC: inC, pieces: pieces, wsSet: wsSet };
+        renderOverview();
+        applyRmMode();
       }
 
       /* ================= roadmap: point-to-point drag linking ================= */
@@ -2192,6 +2437,31 @@
       });
       $("#wsImportCancelBtn").addEventListener("click", function () { importSelection = null; document.getElementById("wsImportDlg").close(); });
       $("#wsImportSaveBtn").addEventListener("click", function () { saveImport(); });
+
+      /* ---- roadmap overview（全体図） wiring ---- */
+      $("#rmModeNormal").addEventListener("click", function () { overviewMode = false; applyRmMode(); });
+      $("#rmModeOverview").addEventListener("click", function () { overviewMode = true; renderOverview(); applyRmMode(); });
+      $("#overviewSvgWrap").addEventListener("click", function (ev) {
+        var g = ev.target.closest ? ev.target.closest("[data-ov]") : null;
+        if (g) openPieceDetail(g.getAttribute("data-ov"));
+      });
+      $("#overviewSvgWrap").addEventListener("keydown", function (ev) {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        var g = ev.target.closest ? ev.target.closest("[data-ov]") : null;
+        if (g) { ev.preventDefault(); openPieceDetail(g.getAttribute("data-ov")); }
+      });
+      $("#pieceCloseBtn").addEventListener("click", function () { document.getElementById("pieceDlg").close(); });
+      $("#pieceEditBtn").addEventListener("click", function () {
+        var id = detailId;
+        document.getElementById("pieceDlg").close();
+        if (id) openEditor(id);
+      });
+      $("#pieceStatusSel").addEventListener("change", function (ev) {
+        var p = byId(detailId); if (!p) return;
+        p.status = ev.target.value;
+        saveState(); renderAll(); renderPieceDetail();
+        toast("「" + p.title + "」を「" + STATUS_LABEL[p.status] + "」にしました");
+      });
 
       $("#cards").addEventListener("click", function (ev) {
         if (handleIcsClick(ev)) return;
