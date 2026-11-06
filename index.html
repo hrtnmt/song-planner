@@ -88,6 +88,27 @@
       .alert li { margin: 2px 0; }
       .alert .days { font-weight: 700; white-space: nowrap; }
 
+      /* ---------- profile bar ---------- */
+      .profile-bar {
+        display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 10px 12px; margin-bottom: 14px;
+      }
+      .profile-main { display: flex; gap: 10px; align-items: center; min-width: 0; flex: 1 1 260px; }
+      .profile-avatar {
+        width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff;
+        display: flex; align-items: center; justify-content: center; flex: none;
+        font-family: "Shippori Mincho B1", serif; font-weight: 700; font-size: 19px;
+      }
+      @media (prefers-color-scheme: dark) { .profile-avatar { color: #1d1216; } }
+      .profile-meta { display: grid; gap: 1px; min-width: 0; flex: 1; }
+      .profile-meta label { font-size: 11.5px; color: var(--ink-faint); font-weight: 700; letter-spacing: .04em; }
+      .profile-meta select { max-width: 340px; width: 100%; font-weight: 700; padding: 6px 8px; }
+      .profile-count { font-size: 12px; color: var(--ink-soft); }
+      .profile-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+      .profile-check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; margin-top: 12px; color: var(--ink-soft); }
+      .pin-input { letter-spacing: .35em; }
+
       /* ---------- toolbar / tabs ---------- */
       .topbar {
         display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
@@ -119,7 +140,7 @@
       .searchbox { position: relative; flex: 1 1 200px; min-width: 160px; }
       .searchbox svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--ink-faint); }
       .searchbox input { width: 100%; padding: 8px 10px 8px 32px; }
-      input[type="text"], input[type="url"], input[type="number"], input[type="date"], select, textarea {
+      input[type="text"], input[type="url"], input[type="number"], input[type="date"], input[type="password"], select, textarea {
         background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
       }
       input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
@@ -297,6 +318,23 @@
   </head>
   <body>
     <div class="wrap">
+      <div class="profile-bar" aria-label="プロフィール">
+        <div class="profile-main">
+          <div class="profile-avatar" id="profileAvatar" aria-hidden="true">マ</div>
+          <div class="profile-meta">
+            <label for="profileSelect">プロフィール</label>
+            <select id="profileSelect" aria-label="プロフィールを切り替え"></select>
+            <span class="profile-count" id="profileCount"></span>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button type="button" class="btn small" id="profileAddBtn">＋ 追加</button>
+          <button type="button" class="btn small" id="profileEditBtn">名前・PIN</button>
+          <button type="button" class="btn small" id="profileLockBtn" hidden>ロック</button>
+          <button type="button" class="btn small danger" id="profileDeleteBtn">削除</button>
+        </div>
+      </div>
+
       <div id="alertArea"></div>
 
       <div class="topbar">
@@ -401,7 +439,7 @@
           JSONを読み込み
         </button>
         <input type="file" id="importFile" accept="application/json,.json" hidden />
-        <p class="note">データはこのブラウザ内に保存されます。別の端末へ移すときやバックアップには「JSONを書き出し」を使ってください。期日アラートはこのページを開いたときに上部へ表示されます。</p>
+        <p class="note">データはプロフィールごとにこのブラウザ内に保存されます。「JSONを書き出し／読み込み」は表示中のプロフィールだけが対象です。別の端末へ移すときやバックアップに使ってください。期日アラートはこのページを開いたときに上部へ表示されます。</p>
       </div>
 
       <div class="cal-guide" aria-label="カレンダー通知の使い方">
@@ -527,6 +565,61 @@
       </form>
     </dialog>
 
+    <!-- ===== profile dialog ===== -->
+    <dialog id="profileDlg">
+      <form method="dialog" id="profileForm" novalidate>
+        <div class="dlg-body">
+          <h2 id="profileDlgTitle">プロフィールを追加</h2>
+          <p class="form-error" id="profileFormError"></p>
+          <div class="field" style="margin-bottom:12px">
+            <label for="pfName">名前 <span style="color:var(--danger)">*必須</span></label>
+            <input type="text" id="pfName" placeholder="例：私用、家族用、レッスン用" maxlength="30" />
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="pfPin">PIN（4桁の数字・任意）</label>
+              <input type="password" id="pfPin" class="pin-input" inputmode="numeric" autocomplete="new-password" maxlength="4" placeholder="設定しない場合は空欄" />
+            </div>
+            <div class="field">
+              <label for="pfPin2">PIN（確認）</label>
+              <input type="password" id="pfPin2" class="pin-input" inputmode="numeric" autocomplete="new-password" maxlength="4" placeholder="もう一度入力" />
+            </div>
+          </div>
+          <p class="hint" id="pfPinHint">PINを設定すると、このプロフィールに切り替えるときや開くときにPINの入力が必要になります。空欄のままならPINなしです。編集中に空欄にした場合は、今のPINがそのまま残ります。</p>
+          <label class="profile-check" id="pfRemovePinWrap" hidden><input type="checkbox" id="pfRemovePin" /> PINを外す</label>
+        </div>
+        <div class="dlg-foot">
+          <span class="spacer"></span>
+          <button type="button" class="btn" id="profileCancelBtn">キャンセル</button>
+          <button type="submit" class="btn primary">保存する</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ===== unlock dialog ===== -->
+    <dialog id="unlockDlg">
+      <form method="dialog" id="unlockForm" novalidate>
+        <div class="dlg-body">
+          <h2>PINを入力</h2>
+          <p id="unlockText" style="margin:0 0 12px;color:var(--ink-soft)"></p>
+          <p class="form-error" id="unlockError"></p>
+          <div class="field">
+            <label for="unlockPin">PIN（4桁）</label>
+            <input type="password" id="unlockPin" class="pin-input" inputmode="numeric" autocomplete="current-password" maxlength="4" placeholder="••••" />
+          </div>
+          <div class="field" style="margin-top:12px">
+            <label for="unlockSwitchSelect">別のプロフィールを選ぶ</label>
+            <select id="unlockSwitchSelect"></select>
+          </div>
+        </div>
+        <div class="dlg-foot">
+          <span class="spacer"></span>
+          <button type="button" class="btn" id="unlockCancelBtn">キャンセル</button>
+          <button type="submit" class="btn primary">開く</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="confirmDlg">
       <div class="dlg-body">
         <h2 style="font-size:17px">削除しますか？</h2>
@@ -543,7 +636,8 @@
     <script>
       "use strict";
       /* ================= constants ================= */
-      var LS_KEY = "song-planner-pages:v1";
+      var LS_KEY = "song-planner-pages:v2";
+      var LS_KEY_V1 = "song-planner-pages:v1";
       var ERAS = ["バロック", "古典派", "ロマン派", "近現代", "その他"];
       var ERA_ORDER = { "バロック": 0, "古典派": 1, "ロマン派": 2, "近現代": 3, "その他": 4, "": 5 };
       var GENRES = ["ピアノ", "吹奏楽", "室内楽", "管弦楽", "合唱", "その他"];
@@ -570,23 +664,71 @@
         ["トルミス", "近現代"], ["tormis", "近現代"], ["武満", "近現代"], ["サティ", "近現代"]
       ];
 
-      /* ================= state ================= */
+      /* ================= state (profiles) ================= */
       function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-      function loadState() {
-        try {
-          var raw = localStorage.getItem(LS_KEY);
-          if (raw) {
-            var s = JSON.parse(raw);
-            if (s && Array.isArray(s.pieces)) return { pieces: s.pieces, settings: Object.assign({ notifyWithin: 7 }, s.settings || {}) };
-          }
-        } catch (e) { /* fall through to fresh state */ }
-        return { pieces: [], settings: { notifyWithin: 7 } };
+      function hashPin(pin, salt) {
+        var s = String(salt) + ":" + String(pin);
+        var h = 5381;
+        for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+        for (var j = s.length - 1; j >= 0; j--) h = ((h * 31) + s.charCodeAt(j)) >>> 0;
+        return "h" + h.toString(36);
       }
-      var state = loadState();
-      function saveState() {
-        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+      function normalizeData(s) {
+        return {
+          pieces: s && Array.isArray(s.pieces) ? s.pieces : [],
+          settings: Object.assign({ notifyWithin: 7 }, (s && s.settings) || {})
+        };
+      }
+      function loadStore() {
+        try {
+          var raw2 = localStorage.getItem(LS_KEY);
+          if (raw2) {
+            var s2 = JSON.parse(raw2);
+            if (s2 && Array.isArray(s2.profiles) && s2.profiles.length > 0 && s2.data) {
+              s2.profiles = s2.profiles.filter(function (p) { return p && p.id && p.name; });
+              if (s2.profiles.length > 0) {
+                s2.profiles.forEach(function (p) { s2.data[p.id] = normalizeData(s2.data[p.id]); if (!p.pinHash) p.pinHash = ""; });
+                if (!s2.data[s2.activeId]) s2.activeId = s2.profiles[0].id;
+                return s2;
+              }
+            }
+          }
+        } catch (e) { /* fall through to migration */ }
+        try {
+          var raw1 = localStorage.getItem(LS_KEY_V1);
+          if (raw1) {
+            var s1 = JSON.parse(raw1);
+            if (s1 && Array.isArray(s1.pieces)) {
+              var mid = uid();
+              var migrated = { profiles: [{ id: mid, name: "マイリスト", pinHash: "" }], activeId: mid, data: {} };
+              migrated.data[mid] = normalizeData(s1);
+              return migrated;
+            }
+          }
+        } catch (e) { /* fall through to fresh store */ }
+        var fid = uid();
+        var fresh = { profiles: [{ id: fid, name: "マイリスト", pinHash: "" }], activeId: fid, data: {} };
+        fresh.data[fid] = normalizeData(null);
+        return fresh;
+      }
+      var store = loadStore();
+      var state = store.data[store.activeId];
+      var unlockedProfileIds = {};
+      function activeProfile() {
+        return store.profiles.find(function (p) { return p.id === store.activeId; }) || store.profiles[0] || null;
+      }
+      function profileById(id) {
+        return store.profiles.find(function (p) { return p.id === id; }) || null;
+      }
+      function saveStore() {
+        try { localStorage.setItem(LS_KEY, JSON.stringify(store)); }
         catch (e) { toast("保存できませんでした（ブラウザの容量制限など）"); }
       }
+      function saveState() {
+        store.data[store.activeId] = state;
+        saveStore();
+      }
+      saveStore();
       function byId(id) { return state.pieces.find(function (p) { return p.id === id; }) || null; }
 
       /* ================= helpers ================= */
@@ -778,6 +920,157 @@
         }
         state.pieces.forEach(depthOf);
         return depth;
+      }
+
+      /* ================= profiles: UI / switch / CRUD / unlock ================= */
+      function renderProfileUI() {
+        var prof = activeProfile(); if (!prof) return;
+        var sel = document.getElementById("profileSelect");
+        if (sel) {
+          sel.innerHTML = store.profiles.map(function (p) {
+            return '<option value="' + esc(p.id) + '"' + (p.id === store.activeId ? " selected" : "") + ">" + esc(p.name) + (p.pinHash ? "（PINあり）" : "") + "</option>";
+          }).join("");
+          sel.value = store.activeId;
+        }
+        var av = document.getElementById("profileAvatar");
+        if (av) av.textContent = (prof.name.trim().charAt(0) || "？");
+        var cnt = document.getElementById("profileCount");
+        if (cnt) {
+          var d = store.data[prof.id];
+          var n = d && Array.isArray(d.pieces) ? d.pieces.length : 0;
+          cnt.textContent = "このプロフィールの曲 " + n + "件" + (store.profiles.length > 1 ? " ／ 全" + store.profiles.length + "プロフィール" : "");
+        }
+        var lockBtn = document.getElementById("profileLockBtn");
+        if (lockBtn) lockBtn.hidden = !prof.pinHash;
+        var delBtn = document.getElementById("profileDeleteBtn");
+        if (delBtn) delBtn.disabled = false;
+      }
+      function syncNotifySelect() {
+        var ns = document.getElementById("notifyWithin");
+        if (ns) ns.value = String(state.settings.notifyWithin);
+      }
+      function switchToProfile(id) {
+        var prof = profileById(id); if (!prof) return;
+        store.activeId = id;
+        if (!store.data[id]) store.data[id] = normalizeData(null);
+        state = store.data[id];
+        saveStore();
+        syncNotifySelect();
+        renderProfileUI();
+        renderAll();
+      }
+      /* ---- unlock dialog ---- */
+      var unlockTargetId = null;
+      var unlockOnSuccess = null;
+      var unlockOnCancel = null;
+      var unlockIsGate = false;
+      function openUnlock(targetId, onSuccess, onCancel, isGate) {
+        var prof = profileById(targetId); if (!prof) return;
+        unlockTargetId = targetId;
+        unlockOnSuccess = onSuccess || null;
+        unlockOnCancel = onCancel || null;
+        unlockIsGate = !!isGate;
+        var dlg = document.getElementById("unlockDlg");
+        document.getElementById("unlockText").textContent = "プロフィール「" + prof.name + "」はPINでロックされています。";
+        var err = document.getElementById("unlockError"); err.textContent = ""; err.style.display = "none";
+        document.getElementById("unlockPin").value = "";
+        var sw = document.getElementById("unlockSwitchSelect");
+        sw.innerHTML = store.profiles.map(function (p) {
+          return '<option value="' + esc(p.id) + '"' + (p.id === targetId ? " selected" : "") + ">" + esc(p.name) + (p.pinHash ? "（PINあり）" : "") + "</option>";
+        }).join("");
+        document.getElementById("unlockCancelBtn").hidden = unlockIsGate;
+        if (!dlg.open) dlg.showModal();
+        setTimeout(function () { document.getElementById("unlockPin").focus(); }, 30);
+      }
+      function closeUnlock() {
+        var dlg = document.getElementById("unlockDlg");
+        if (dlg.open) dlg.close();
+        unlockTargetId = null; unlockOnSuccess = null; unlockOnCancel = null; unlockIsGate = false;
+      }
+      function requestProfileSwitch(targetId) {
+        if (targetId === store.activeId) { renderProfileUI(); return; }
+        var prof = profileById(targetId); if (!prof) return;
+        if (prof.pinHash && !unlockedProfileIds[targetId]) {
+          openUnlock(targetId,
+            function () { switchToProfile(targetId); toast("プロフィール「" + prof.name + "」に切り替えました"); },
+            function () { renderProfileUI(); },
+            false);
+        } else {
+          switchToProfile(targetId);
+          toast("プロフィール「" + prof.name + "」に切り替えました");
+        }
+      }
+      /* ---- profile create / edit dialog ---- */
+      var profileEditId = null;
+      function openProfileDialog(editId) {
+        profileEditId = editId || null;
+        var prof = editId ? profileById(editId) : null;
+        document.getElementById("profileDlgTitle").textContent = prof ? "プロフィールの名前・PIN" : "プロフィールを追加";
+        var err = document.getElementById("profileFormError"); err.textContent = ""; err.style.display = "none";
+        document.getElementById("pfName").value = prof ? prof.name : "";
+        document.getElementById("pfPin").value = "";
+        document.getElementById("pfPin2").value = "";
+        document.getElementById("pfPin").disabled = false;
+        document.getElementById("pfPin2").disabled = false;
+        var rmWrap = document.getElementById("pfRemovePinWrap");
+        var rm = document.getElementById("pfRemovePin");
+        rm.checked = false;
+        rmWrap.hidden = !(prof && prof.pinHash);
+        document.getElementById("profileDlg").showModal();
+        setTimeout(function () { document.getElementById("pfName").focus(); }, 30);
+      }
+      function profileFormError(msg) {
+        var e = document.getElementById("profileFormError"); e.textContent = msg; e.style.display = "block";
+      }
+      function saveProfileFromForm(ev) {
+        ev.preventDefault();
+        var name = document.getElementById("pfName").value.trim();
+        if (!name) { profileFormError("名前を入力してください。"); document.getElementById("pfName").focus(); return; }
+        var pin = document.getElementById("pfPin").value.trim();
+        var pin2 = document.getElementById("pfPin2").value.trim();
+        var removePin = document.getElementById("pfRemovePin").checked;
+        if (!removePin && (pin || pin2)) {
+          if (!/^\d{4}$/.test(pin)) { profileFormError("PINは4桁の数字で入力してください。"); return; }
+          if (pin !== pin2) { profileFormError("PIN（確認）が一致しません。"); return; }
+        }
+        if (profileEditId) {
+          var prof = profileById(profileEditId); if (!prof) return;
+          prof.name = name;
+          if (removePin) prof.pinHash = "";
+          else if (pin) prof.pinHash = hashPin(pin, prof.id);
+          if (prof.pinHash) unlockedProfileIds[prof.id] = true;
+          saveStore();
+          document.getElementById("profileDlg").close();
+          renderProfileUI(); renderAll();
+          toast("プロフィールを保存しました");
+        } else {
+          var id = uid();
+          var np = { id: id, name: name, pinHash: pin ? hashPin(pin, id) : "" };
+          store.profiles.push(np);
+          store.data[id] = normalizeData(null);
+          if (np.pinHash) unlockedProfileIds[id] = true;
+          saveStore();
+          document.getElementById("profileDlg").close();
+          switchToProfile(id);
+          toast("プロフィール「" + name + "」を追加しました");
+        }
+      }
+      function deleteActiveProfile() {
+        var prof = activeProfile(); if (!prof) return;
+        var idx = store.profiles.findIndex(function (p) { return p.id === prof.id; });
+        if (idx !== -1) store.profiles.splice(idx, 1);
+        delete store.data[prof.id];
+        delete unlockedProfileIds[prof.id];
+        if (store.profiles.length === 0) {
+          var fid = uid();
+          store.profiles.push({ id: fid, name: "マイリスト", pinHash: "" });
+          store.data[fid] = normalizeData(null);
+        }
+        store.activeId = store.profiles[0].id;
+        state = store.data[store.activeId];
+        saveStore();
+        syncNotifySelect();
+        renderProfileUI(); renderAll();
       }
 
       /* ================= rendering: alerts ================= */
@@ -976,7 +1269,7 @@
         $("#schedArea").innerHTML = html;
       }
 
-      function renderAll() { renderAlerts(); renderList(); renderRoadmap(); renderSchedule(); }
+      function renderAll() { renderProfileUI(); renderAlerts(); renderList(); renderRoadmap(); renderSchedule(); }
 
       /* ================= editor ================= */
       var editor = $("#editor");
@@ -1098,10 +1391,21 @@
       /* ================= delete confirm ================= */
       var confirmDlg = $("#confirmDlg");
       var pendingDeleteId = null;
+      var pendingProfileDeleteId = null;
       function askDelete(id) {
         var p = byId(id); if (!p) return;
         pendingDeleteId = id;
+        pendingProfileDeleteId = null;
         $("#confirmText").textContent = "「" + p.title + "」を削除します。この曲を前提にしている曲からは、前提の指定も外れます。";
+        confirmDlg.showModal();
+      }
+      function askDeleteProfile() {
+        var prof = activeProfile(); if (!prof) return;
+        pendingDeleteId = null;
+        pendingProfileDeleteId = prof.id;
+        var d = store.data[prof.id];
+        var n = d && Array.isArray(d.pieces) ? d.pieces.length : 0;
+        $("#confirmText").textContent = "プロフィール「" + prof.name + "」を削除します。そのプロフィールの曲リスト（" + n + "曲）もすべて削除され、元に戻せません。";
         confirmDlg.showModal();
       }
 
@@ -1199,13 +1503,78 @@
       $("#editForm").addEventListener("submit", saveFromForm);
       $("#cancelBtn").addEventListener("click", closeEditor);
       $("#deleteBtn").addEventListener("click", function () { closeEditor(); askDelete(editingId); });
-      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; });
+      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; pendingProfileDeleteId = null; });
       $("#confirmYes").addEventListener("click", function () {
+        if (pendingProfileDeleteId) {
+          var targetId = pendingProfileDeleteId;
+          pendingProfileDeleteId = null;
+          confirmDlg.close();
+          if (targetId === store.activeId) { deleteActiveProfile(); toast("プロフィールを削除しました"); }
+          return;
+        }
         if (!pendingDeleteId) return;
         var p = byId(pendingDeleteId);
         state.pieces = state.pieces.filter(function (x) { return x.id !== pendingDeleteId; });
         saveState(); confirmDlg.close(); pendingDeleteId = null; renderAll();
         toast("「" + (p ? p.title : "") + "」を削除しました");
+      });
+
+      /* ---- profile wiring ---- */
+      $("#profileSelect").addEventListener("change", function (ev) { requestProfileSwitch(ev.target.value); });
+      $("#profileAddBtn").addEventListener("click", function () { openProfileDialog(null); });
+      $("#profileEditBtn").addEventListener("click", function () { openProfileDialog(store.activeId); });
+      $("#profileDeleteBtn").addEventListener("click", function () { askDeleteProfile(); });
+      $("#profileLockBtn").addEventListener("click", function () {
+        var prof = activeProfile(); if (!prof || !prof.pinHash) return;
+        delete unlockedProfileIds[prof.id];
+        openUnlock(prof.id, function () { toast("ロックを解除しました"); }, null, true);
+      });
+      $("#profileForm").addEventListener("submit", saveProfileFromForm);
+      $("#profileCancelBtn").addEventListener("click", function () { document.getElementById("profileDlg").close(); });
+      $("#pfRemovePin").addEventListener("change", function (ev) {
+        document.getElementById("pfPin").disabled = ev.target.checked;
+        document.getElementById("pfPin2").disabled = ev.target.checked;
+      });
+      $("#unlockForm").addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var prof = profileById(unlockTargetId); if (!prof) { closeUnlock(); return; }
+        var pin = document.getElementById("unlockPin").value.trim();
+        if (pin && hashPin(pin, prof.id) === prof.pinHash) {
+          unlockedProfileIds[prof.id] = true;
+          var cb = unlockOnSuccess;
+          closeUnlock();
+          if (cb) cb();
+        } else {
+          var err = document.getElementById("unlockError");
+          err.textContent = "PINが違います。もう一度入力してください。";
+          err.style.display = "block";
+          document.getElementById("unlockPin").value = "";
+          document.getElementById("unlockPin").focus();
+        }
+      });
+      $("#unlockCancelBtn").addEventListener("click", function () {
+        var cb = unlockOnCancel;
+        closeUnlock();
+        renderProfileUI();
+        if (cb) cb();
+      });
+      $("#unlockDlg").addEventListener("cancel", function (ev) {
+        if (unlockIsGate) { ev.preventDefault(); return; }
+        var cb = unlockOnCancel;
+        unlockTargetId = null; unlockOnSuccess = null; unlockOnCancel = null;
+        renderProfileUI();
+        if (cb) cb();
+      });
+      $("#unlockSwitchSelect").addEventListener("change", function (ev) {
+        var targetId = ev.target.value;
+        if (targetId === unlockTargetId) return;
+        var prof = profileById(targetId); if (!prof) return;
+        if (!prof.pinHash || unlockedProfileIds[targetId]) {
+          closeUnlock();
+          if (targetId !== store.activeId) { switchToProfile(targetId); toast("プロフィール「" + prof.name + "」に切り替えました"); }
+        } else {
+          openUnlock(targetId, function () { switchToProfile(targetId); toast("プロフィール「" + prof.name + "」に切り替えました"); }, function () { renderProfileUI(); }, unlockIsGate && targetId === store.activeId);
+        }
       });
 
       /* settings + data portability */
@@ -1216,11 +1585,13 @@
         saveState(); renderAlerts();
       });
       $("#exportBtn").addEventListener("click", function () {
-        var blob = new Blob([JSON.stringify({ app: "song-planner-pages", version: 1, pieces: state.pieces, settings: state.settings }, null, 2)], { type: "application/json" });
+        var prof = activeProfile();
+        var blob = new Blob([JSON.stringify({ app: "song-planner-pages", version: 1, profileName: prof ? prof.name : "", pieces: state.pieces, settings: state.settings }, null, 2)], { type: "application/json" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         var d = new Date();
-        a.download = "song-planner-" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + ".json";
+        var safeProfile = prof ? prof.name.replace(/[\\/:*?"<>|]/g, "").slice(0, 20) : "";
+        a.download = "song-planner-" + (safeProfile ? safeProfile + "-" : "") + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + ".json";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
         toast("JSONを書き出しました");
@@ -1246,14 +1617,21 @@
             if (data.settings) state.settings = Object.assign(state.settings, data.settings);
             notifySel.value = String(state.settings.notifyWithin);
             saveState(); renderAll();
-            toast(pieces.length + "曲を読み込みました（既存データと置き換え）");
+            toast(pieces.length + "曲を読み込みました（このプロフィールの既存データと置き換え）");
           } catch (e) { toast("読み込めませんでした：JSONの形式が違うようです"); }
           ev.target.value = "";
         };
         reader.readAsText(file);
       });
 
+      renderProfileUI();
       renderAll();
+      (function initialLock() {
+        var prof = activeProfile();
+        if (prof && prof.pinHash && !unlockedProfileIds[prof.id]) {
+          openUnlock(prof.id, function () { toast("ロックを解除しました"); }, null, true);
+        }
+      })();
     </script>
   </body>
 </html>
