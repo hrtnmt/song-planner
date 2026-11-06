@@ -751,10 +751,12 @@
       #view-roadmap:not([hidden]) {
         position: relative; padding: 0; overflow: hidden; animation: none;
       }
-      /* キャンバス／全体図はセクションの全面に */
+      /* キャンバス／全体図はセクションの全面に。
+         上端はワークスペースバーの高さ分だけ空け、初期位置でノードがバーに隠れないようにする */
       #view-roadmap .roadmap-frame {
         position: absolute; inset: 0; border: 0; border-radius: 0; box-shadow: none;
         -webkit-overflow-scrolling: touch;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px)); box-sizing: border-box;
       }
       #view-roadmap #overviewWrap {
         position: absolute; inset: 0; padding: 108px 10px 84px;
@@ -763,15 +765,16 @@
       #view-roadmap .ov-frame { border-radius: 14px; }
       .roadmap-canvas { transform-origin: 0 0; }
 
-      /* ワークスペースバー：上端に浮かぶ細い1行バー */
+      /* ワークスペースバー：上端いっぱい（左右の端まで）に広がる1行バー */
       #view-roadmap .ws-bar {
         position: absolute; z-index: 35;
-        top: calc(8px + env(safe-area-inset-top, 0px)); left: 8px; right: 8px;
-        margin: 0; padding: 6px; gap: 6px;
+        top: 0; left: 0; right: 0;
+        margin: 0; padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 6px; gap: 6px;
         flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-        border-radius: 14px; box-shadow: 0 6px 20px rgba(35, 32, 27, .14);
+        border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+        box-shadow: 0 6px 20px rgba(35, 32, 27, .10);
         background: var(--surface);
-        background: color-mix(in srgb, var(--surface) 90%, transparent);
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
         -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
       }
       #view-roadmap .ws-bar::-webkit-scrollbar { display: none; }
@@ -788,7 +791,7 @@
       /* 線の見方：右上の小さなピル。開いたときだけパネルになる */
       #view-roadmap .roadmap-info {
         position: absolute; z-index: 34;
-        top: calc(62px + env(safe-area-inset-top, 0px)); right: 8px;
+        top: calc(66px + env(safe-area-inset-top, 0px)); right: 10px;
         margin: 0; max-width: min(330px, calc(100vw - 16px));
       }
       #view-roadmap .roadmap-info > summary {
@@ -2250,11 +2253,28 @@
         var c = document.getElementById("roadmapCanvas");
         if (c) c.style.transform = rmZoom === 1 ? "" : "scale(" + rmZoom + ")";
       }
+      /* バーに隠れない可視領域（フレームの上パディング分を除いた高さ） */
+      function rmAvail(f) {
+        var pt = parseFloat(window.getComputedStyle(f).paddingTop) || 0;
+        return { w: f.clientWidth, h: Math.max(80, f.clientHeight - pt) };
+      }
       function fitRoadmap() {
         var f = document.getElementById("roadmapFrame");
         if (!f || !lastLayout || !lastLayout.W || !lastLayout.H) return;
-        var z = Math.min(f.clientWidth / lastLayout.W, f.clientHeight / lastLayout.H, 1);
+        var a = rmAvail(f);
+        var z = Math.min(a.w / lastLayout.W, a.h / lastLayout.H, 1);
         setRmZoom(z);
+        f.scrollLeft = 0; f.scrollTop = 0;
+      }
+      /* 開いた直後のデフォルト表示：全体フィットが小さくなりすぎる場合は
+         読める大きさ（55%）を下限にし、左上の起点から見せる */
+      var RM_DEFAULT_MIN = 0.55;
+      function openRoadmapView() {
+        var f = document.getElementById("roadmapFrame");
+        if (!f || !lastLayout || !lastLayout.W || !lastLayout.H) return;
+        var a = rmAvail(f);
+        var fit = Math.min(a.w / lastLayout.W, a.h / lastLayout.H, 1);
+        setRmZoom(Math.max(fit, RM_DEFAULT_MIN));
         f.scrollLeft = 0; f.scrollTop = 0;
       }
 
@@ -2911,7 +2931,7 @@
           $("#view-roadmap").hidden = curView !== "roadmap";
           $("#view-schedule").hidden = curView !== "schedule";
           document.body.classList.toggle("roadmap-on", curView === "roadmap");
-          if (curView === "roadmap") { renderRoadmap(); if (!overviewMode) fitRoadmap(); }
+          if (curView === "roadmap") { renderRoadmap(); if (!overviewMode) openRoadmapView(); }
         });
       });
       document.querySelectorAll("[data-stat-filter]").forEach(function (b) {
