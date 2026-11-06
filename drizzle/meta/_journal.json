@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1793922710773,
+      "tag": "0001_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793922710773,
+      "tag": "0002_songs_table_replace_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793923419803,
+      "tag": "0003_add_era_dates_and_roadmap_relations",
+      "breakpoints": true
+    }
+  ]
+}
