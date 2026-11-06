@@ -148,7 +148,7 @@
       .count { color: var(--ink-soft); font-size: 13px; margin: 8px 2px 12px; }
 
       /* ---------- cards ---------- */
-      .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+      .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
       .card {
         background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
         box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
@@ -218,9 +218,17 @@
       .empty p { margin: 4px 0 14px; }
 
       /* ---------- roadmap ---------- */
-      .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; align-items: center; }
-      .legend .swatch { display: inline-block; width: 26px; height: 0; border-top: 3px solid var(--ink-soft); vertical-align: middle; margin-right: 5px; border-radius: 2px; }
-      .legend .swatch.gold { border-top-color: var(--gold); }
+      .legend { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; align-items: center; }
+      .legend .swatch { display: inline-block; width: 30px; height: 0; border-top: 3px solid var(--ink-faint); vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+      .legend .swatch.and { border-top: 3.5px solid var(--accent); }
+      .legend .swatch.or { border-top: 3px dashed var(--gold); }
+      .lpill {
+        display: inline-block; padding: 0 8px; border-radius: 999px; margin-right: 5px;
+        font-size: 11px; font-weight: 700; letter-spacing: .07em; line-height: 1.7; vertical-align: middle;
+      }
+      .lpill.and { background: var(--accent); color: #fff; }
+      @media (prefers-color-scheme: dark) { .lpill.and { color: #1d1216; } }
+      .lpill.or { background: var(--gold-soft); color: var(--gold); border: 1.5px solid var(--gold); }
       .roadmap-frame {
         border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
         overflow: auto; box-shadow: var(--shadow);
@@ -228,10 +236,16 @@
       .roadmap-canvas { position: relative; }
       .roadmap-canvas svg { position: absolute; left: 0; top: 0; pointer-events: none; }
       .rnode {
-        position: absolute; width: 208px; text-align: left;
+        position: absolute; width: 216px; text-align: left;
         background: var(--surface); border: 1.5px solid var(--line); border-radius: 9px;
-        padding: 9px 11px; box-shadow: var(--shadow);
+        padding: 10px 12px; box-shadow: var(--shadow);
       }
+      .rnode .preq {
+        display: block; margin-top: 6px; padding-top: 5px;
+        border-top: 1px dashed var(--line);
+        font-size: 11px; line-height: 1.5; color: var(--ink-soft);
+      }
+      .rnode .preq b { color: var(--ink); }
       .rnode:hover { border-color: var(--ink-faint); }
       .rnode .step { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--ink-faint); }
       .rnode .t { font-family: "Shippori Mincho B1", serif; font-weight: 700; font-size: 14.5px; line-height: 1.35; margin: 1px 0; }
@@ -243,6 +257,49 @@
       @media (prefers-color-scheme: dark) { .rnode .badge.done { color: #14210d; } }
       .rnode.is-done { opacity: .78; }
       .rnode.is-ready { border-color: var(--ok); }
+      .rnode { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
+      .rnode:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .rnode.dragging { opacity: .92; cursor: grabbing; z-index: 7; box-shadow: 0 10px 26px rgba(35, 32, 27, .22); }
+      .rnode.link-source { border-color: var(--accent); }
+      .rnode.drop-ok { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+      .rnode.drop-remove { border-color: var(--danger); box-shadow: 0 0 0 4px var(--danger-soft); }
+      .rnode.stack-target { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft); }
+      .rnode .port {
+        position: absolute; top: 50%; width: 25px; height: 25px; margin-top: -13px;
+        border-radius: 50%; background: var(--surface); border: 3px solid var(--accent);
+        cursor: crosshair; z-index: 2; touch-action: none; box-sizing: border-box;
+      }
+      .rnode .port:hover { background: var(--accent); }
+      .rnode .port-in { left: -13px; }
+      .rnode .port-out { right: -13px; }
+      .roadmap-canvas svg.link-layer { z-index: 40; overflow: visible; }
+      .roadmap-canvas svg .edge-hit { pointer-events: stroke; cursor: pointer; }
+      .roadmap-help { font-size: 13px; color: var(--ink-soft); margin: 0 0 10px; }
+      .roadmap-help b { color: var(--ink); }
+      .legend .swatch.solid { border-top: 3.5px solid var(--ink); }
+      .legend .swatch.dash { border-top: 3px dashed var(--ink-faint); }
+      .legend .swatch.enclose { height: 14px; border: 1.5px solid var(--accent); background: var(--accent-soft); border-radius: 4px; vertical-align: -3px; }
+
+      /* ---------- roadmap workspaces ---------- */
+      .ws-bar {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 10px 12px; margin-bottom: 12px;
+      }
+      .ws-bar .ws-label { font-size: 12px; font-weight: 700; color: var(--ink-faint); letter-spacing: .04em; }
+      .ws-bar select { font-weight: 700; max-width: 260px; }
+      .ws-bar .ws-count { font-size: 12.5px; color: var(--ink-soft); }
+      .ws-bar .spacer { flex: 1; }
+      .ws-import-list { display: grid; gap: 6px; max-height: 46vh; overflow-y: auto; }
+      .ws-import-item {
+        display: flex; gap: 10px; align-items: baseline; text-align: left; width: 100%;
+        border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 12px;
+      }
+      .ws-import-item .ttl { font-family: "Shippori Mincho B1", serif; font-weight: 700; }
+      .ws-import-item .meta { font-size: 12px; color: var(--ink-soft); }
+      .ws-import-item .mark { margin-left: auto; flex: none; font-size: 12px; font-weight: 700; color: var(--ink-faint); }
+      .ws-import-item[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+      .ws-import-item[aria-pressed="true"] .mark { color: var(--accent); }
 
       /* ---------- schedule ---------- */
       .sched { display: grid; gap: 8px; }
@@ -315,6 +372,143 @@
       }
       .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
+
+    <style id="app-shell">
+      /* ===== スマホ・アプリシェル（1画面）上書き ===== */
+      html, body { height: 100%; }
+      body {
+        height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+        font-size: 14.5px; -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+      }
+      .wrap {
+        flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1080px; margin: 0 auto;
+        padding: 0; display: flex; flex-direction: column; position: relative;
+      }
+      button { transition: transform .08s ease, background-color .15s ease, border-color .15s ease; }
+      button:active { transform: scale(.97); }
+
+      /* --- compact header (profile) --- */
+      .profile-bar {
+        flex: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+        box-shadow: none; margin: 0; padding: 8px 12px; gap: 8px;
+        padding-top: calc(8px + env(safe-area-inset-top, 0px));
+      }
+      .profile-avatar { width: 34px; height: 34px; font-size: 16px; }
+      .profile-meta label { display: none; }
+      .profile-meta select { padding: 4px 6px; font-size: 14px; }
+      .profile-count { font-size: 11px; }
+      .profile-actions .btn.small { padding: 4px 9px; font-size: 12px; border-radius: 999px; }
+
+      /* --- compact alert --- */
+      #alertArea:empty { display: none; }
+      .alert { margin: 8px 12px 0; padding: 8px 12px; border-radius: 10px; }
+      .alert h2 { font-size: 12.5px; margin-bottom: 2px; }
+      .alert ul { font-size: 12.5px; line-height: 1.5; max-height: 58px; overflow-y: auto; }
+
+      /* --- views: each fills the screen, scrolls inside --- */
+      .wrap > section {
+        flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+        padding: 10px 12px 96px; animation: viewIn .18s ease;
+      }
+      @keyframes viewIn { from { opacity: .35; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { .wrap > section { animation: none; } button { transition: none; } }
+      #view-list { padding-top: 0; }
+      #view-roadmap:not([hidden]) { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 84px; }
+      #view-roadmap .roadmap-frame { flex: 1 1 auto; min-height: 0; }
+
+      /* --- list head: sticky stats + filters --- */
+      .list-head {
+        position: sticky; top: 0; z-index: 8; background: var(--bg);
+        padding: 10px 0 8px; margin-bottom: 2px;
+      }
+      .stat-strip { display: flex; gap: 6px; margin-bottom: 8px; }
+      .stat-strip button {
+        flex: 1 1 0; min-width: 0; border: 1px solid var(--line); background: var(--surface);
+        border-radius: 999px; padding: 6px 4px; font-size: 12px; font-weight: 500; color: var(--ink-soft);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .stat-strip button b { font-variant-numeric: tabular-nums; margin-left: 2px; }
+      .stat-strip button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+      @media (prefers-color-scheme: dark) { .stat-strip button[aria-pressed="true"] { color: #1d1216; } }
+      .filters { margin: 0; gap: 6px; }
+      .filters .searchbox { flex: 1 1 100%; }
+      .filters .searchbox input { padding-top: 9px; padding-bottom: 9px; border-radius: 999px; }
+      .filters select { flex: 1 1 30%; min-width: 0; font-size: 12.5px; padding: 7px 6px; }
+      #fStatus { display: none; }
+      .count { margin: 2px 2px 8px; font-size: 12px; }
+
+      /* --- compact one-column cards --- */
+      .cards { grid-template-columns: 1fr; gap: 9px; }
+      @media (min-width: 760px) { .cards { grid-template-columns: 1fr 1fr; } }
+      .card { padding: 11px 13px; gap: 6px; border-radius: 12px; cursor: pointer; }
+      .card:active { border-color: var(--accent); }
+      .card .composer { font-size: 12px; }
+      .card h3 { font-size: 16.5px; }
+      .card .memo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .card .foot { padding-top: 8px; }
+
+      /* --- roadmap chrome compact --- */
+      .ws-bar { flex: none; padding: 8px 10px; margin-bottom: 8px; gap: 6px; }
+      .ws-bar select { flex: 1 1 140px; min-width: 0; }
+      .ws-bar .btn.small { padding: 5px 9px; font-size: 12px; }
+      .roadmap-info { flex: none; margin-bottom: 8px; }
+      .roadmap-info > summary {
+        cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+        padding: 6px 2px; list-style: none;
+      }
+      .roadmap-info > summary::-webkit-details-marker { display: none; }
+      .roadmap-info > summary::after { content: " ＋"; color: var(--accent); }
+      .roadmap-info[open] > summary::after { content: " −"; }
+      .roadmap-info .legend { margin-bottom: 6px; }
+      .roadmap-info .roadmap-help { margin-bottom: 4px; }
+
+      /* --- schedule compact --- */
+      h2.section { font-size: 16px; margin: 14px 0 8px; }
+      .sched-row { padding: 9px 12px; gap: 8px; }
+
+      /* --- settings inside "more" dialog --- */
+      #moreDlg .settings { margin: 0; border: 0; padding: 0; }
+      #moreDlg .cal-guide { margin-top: 16px; box-shadow: none; }
+
+      /* --- bottom navigation + FAB --- */
+      .tabs.bottom-nav {
+        flex: none; display: flex; gap: 4px; width: 100%;
+        background: var(--surface); border-top: 1px solid var(--line); border-radius: 0;
+        padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+      }
+      .tabs.bottom-nav button {
+        position: relative; flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 1px;
+        padding: 6px 4px 4px; border-radius: 12px; font-size: 11px; font-weight: 500; color: var(--ink-soft);
+      }
+      .tabs.bottom-nav button svg { width: 21px; height: 21px; }
+      .tabs.bottom-nav button[aria-selected="true"] {
+        background: var(--accent-soft); color: var(--accent); box-shadow: none; font-weight: 700;
+      }
+      .nav-badge {
+        position: absolute; top: 1px; left: calc(50% + 3px);
+        min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+        background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
+      }
+      @media (prefers-color-scheme: dark) { .nav-badge { color: #1d1216; } }
+      .btn.fab {
+        position: fixed; right: 14px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+        border-radius: 999px; padding: 13px 20px; font-size: 15px;
+        box-shadow: 0 8px 24px rgba(35, 32, 27, .28);
+      }
+      @media (min-width: 1120px) { .btn.fab { right: calc(50% - 526px); } }
+
+      /* --- dialogs as bottom sheets on phones --- */
+      dialog { margin: auto auto 0; width: 100vw; max-width: 680px; border-radius: 18px 18px 0 0; max-height: 92dvh; }
+      .dlg-body { max-height: calc(92dvh - 118px); padding: 18px 16px 8px; }
+      .dlg-foot { padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
+      @media (min-width: 720px) {
+        dialog { margin: auto; border-radius: 14px; }
+        .dlg-body { max-height: calc(100dvh - 140px); }
+      }
+      .toast { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); z-index: 60; }
+    </style>
   </head>
   <body>
     <div class="wrap">
@@ -332,25 +526,21 @@
           <button type="button" class="btn small" id="profileEditBtn">名前・PIN</button>
           <button type="button" class="btn small" id="profileLockBtn" hidden>ロック</button>
           <button type="button" class="btn small danger" id="profileDeleteBtn">削除</button>
+          <button type="button" class="btn small" id="moreBtn" aria-haspopup="dialog">その他</button>
         </div>
       </div>
 
       <div id="alertArea"></div>
 
-      <div class="topbar">
-        <div class="tabs" role="tablist" aria-label="表示切替">
-          <button type="button" role="tab" data-view="list" aria-selected="true">曲一覧</button>
-          <button type="button" role="tab" data-view="roadmap" aria-selected="false">ロードマップ</button>
-          <button type="button" role="tab" data-view="schedule" aria-selected="false">予定</button>
-        </div>
-        <button type="button" class="btn primary" id="addBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          曲を追加
-        </button>
-      </div>
-
       <!-- ===== list view ===== -->
       <section id="view-list">
+        <div class="list-head">
+        <div class="stat-strip" role="group" aria-label="ステータスで絞り込み">
+          <button type="button" data-stat-filter="" aria-pressed="true">すべて<b id="statAll">0</b></button>
+          <button type="button" data-stat-filter="want" aria-pressed="false">いつか<b id="statWant">0</b></button>
+          <button type="button" data-stat-filter="doing" aria-pressed="false">練習中<b id="statDoing">0</b></button>
+          <button type="button" data-stat-filter="done" aria-pressed="false">演奏済み<b id="statDone">0</b></button>
+        </div>
         <div class="filters">
           <div class="searchbox">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
@@ -374,6 +564,7 @@
             <option value="title">曲名順</option>
           </select>
         </div>
+        </div>
         <p class="count" id="count"></p>
         <div class="cards" id="cards"></div>
         <div class="empty" id="listEmpty" hidden>
@@ -389,17 +580,36 @@
 
       <!-- ===== roadmap view ===== -->
       <section id="view-roadmap" hidden>
-        <div class="legend">
-          <span><span class="swatch"></span>前提（AND：そのグループの曲を全部終えてから）</span>
-          <span><span class="swatch gold"></span>候補（OR：どれか1グループを満たせば進める）</span>
-          <span>ノードを押すと編集できます</span>
+        <div class="ws-bar" aria-label="ロードマップのワークスペース">
+          <span class="ws-label">ワークスペース</span>
+          <select id="wsSelect" aria-label="ワークスペースを切り替え"></select>
+          <button type="button" class="btn small" id="wsAddBtn">＋ 作成</button>
+          <button type="button" class="btn small" id="wsRenameBtn">名前変更</button>
+          <button type="button" class="btn small danger" id="wsDeleteBtn">削除</button>
+          <span class="spacer"></span>
+          <span class="ws-count" id="wsCount"></span>
+          <button type="button" class="btn small primary" id="wsImportBtn">曲をインポート</button>
         </div>
+        <details class="roadmap-info"><summary>線の見方・操作のコツ</summary>
+        <div class="legend">
+          <span><span class="swatch enclose"></span><span class="lpill and">AND</span>グループは<b>面（囲み図形）</b>でまとめられ、線は途中で<b>1本に合流</b>します（そのグループの曲を<b>全部</b>終えてから次へ）</span>
+          <span><span class="swatch or"></span><span class="lpill or">OR</span>候補は別々の線で届きます（<b>どれか1グループ</b>を満たせば次へ進めます）</span>
+          <span><span class="swatch solid"></span><b>実線</b>＝出発側の曲が<b>演奏済み</b>（次の分岐点／カードまで）</span>
+          <span><span class="swatch dash"></span><b>点線</b>＝出発側の曲がまだ<b>未演奏</b></span>
+          <span><span class="swatch"></span>単独の前提（1曲だけ）</span>
+        </div>
+        <p class="roadmap-help">このワークスペースに<b>インポートした曲だけ</b>が表示されます（曲が増えても、作業ごとに分けて作れます）。カード両端の<b>丸い点</b>を押したままドラッグすると、<b>曲線がカーソル／指に追従</b>して伸び、別のカードの上で離すとその向き（つかんだカード → 離したカード）に矢印がつながります。線は<b>点の中心から点の中心へ</b>ベジエ曲線で結ばれます。線がすでにある相手にもう一度つなぐか、線をクリックすると外れます。<b>カード自体をドラッグして別のカードに重ねる</b>とANDグループにまとまり（ドラッグ中は出口の点から金色のガイド線が出ます）、別々に並列でつなぐとORになります。カードを押すと編集できます。</p></details>
         <div class="roadmap-frame" id="roadmapFrame">
           <div class="roadmap-canvas" id="roadmapCanvas"></div>
         </div>
         <div class="empty" id="roadmapEmpty" hidden>
-          <p class="big">つながっている曲がまだありません</p>
-          <p>曲の編集画面で「ロードマップの前提」に曲を登録すると、<br />ここに「この曲をやってから次へ」の流れ図が描かれます。</p>
+          <p class="big">まだ曲が登録されていません</p>
+          <p>曲を追加すると、ここにカードが並びます。<br />カードの丸い点をドラッグして別のカードにつなぐと、「この曲をやってから次へ」の流れ図になります。</p>
+        </div>
+        <div class="empty" id="wsEmpty" hidden>
+          <p class="big">このワークスペースには曲がインポートされていません</p>
+          <p>全曲の中から、このロードマップで使う曲だけを選んで取り込めます。<br />取り込んでいない曲はここには表示されません（曲一覧には残ります）。</p>
+          <button type="button" class="btn primary" id="wsEmptyImportBtn">曲をインポート</button>
         </div>
       </section>
 
@@ -419,6 +629,33 @@
         </div>
       </section>
 
+
+      <button type="button" class="btn primary fab" id="addBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        曲を追加
+      </button>
+      <nav class="tabs bottom-nav" role="tablist" aria-label="表示切替">
+        <button type="button" role="tab" data-view="list" aria-selected="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3"/></svg>
+          <span>曲一覧</span><span class="nav-badge" id="navCountList" hidden></span>
+        </button>
+        <button type="button" role="tab" data-view="roadmap" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="19" r="2.4"/><circle cx="19" cy="5" r="2.4"/><circle cx="19" cy="19" r="2.4"/><path d="M7.2 17.4 16.8 6.6M7.4 19h9.2"/></svg>
+          <span>ロードマップ</span>
+        </button>
+        <button type="button" role="tab" data-view="schedule" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          <span>予定</span><span class="nav-badge" id="navCountSched" hidden></span>
+        </button>
+      </nav>
+
+    </div>
+
+
+    <!-- ===== more dialog (settings / data / calendar guide) ===== -->
+    <dialog id="moreDlg">
+      <div class="dlg-body">
+        <h2 style="font-family:'Shippori Mincho B1',serif;font-size:19px;margin:0 0 12px">その他・データ</h2>
       <!-- ===== settings / data ===== -->
       <div class="settings">
         <label>期日アラート
@@ -451,7 +688,12 @@
           <li>日付を変更したら、古い予定をカレンダー側で削除して、もう一度ボタンから登録し直してください（自動では同期されません）。</li>
         </ol>
       </div>
-    </div>
+      </div>
+      <div class="dlg-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="moreCloseBtn">閉じる</button>
+      </div>
+    </dialog>
 
     <!-- ===== editor dialog ===== -->
     <dialog id="editor">
@@ -596,6 +838,44 @@
       </form>
     </dialog>
 
+    <!-- ===== workspace dialog ===== -->
+    <dialog id="wsDlg">
+      <form method="dialog" id="wsForm" novalidate>
+        <div class="dlg-body">
+          <h2 id="wsDlgTitle">ワークスペースを作成</h2>
+          <p class="form-error" id="wsFormError"></p>
+          <div class="field">
+            <label for="wsName">ワークスペース名 <span style="color:var(--danger)">*必須</span></label>
+            <input type="text" id="wsName" placeholder="例：次の本番まで、基礎固め、弾きたい順" maxlength="40" />
+          </div>
+          <p class="hint">ワークスペースはロードマップ専用の作業場所です。曲そのものは曲一覧に残り、ワークスペースごとに使う曲だけをインポートして並べます。削除しても曲は消えません。</p>
+        </div>
+        <div class="dlg-foot">
+          <span class="spacer"></span>
+          <button type="button" class="btn" id="wsCancelBtn">キャンセル</button>
+          <button type="submit" class="btn primary">保存する</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ===== workspace import dialog ===== -->
+    <dialog id="wsImportDlg">
+      <div class="dlg-body">
+        <h2>曲をインポート</h2>
+        <p class="hint" style="margin:0 0 12px">ワークスペース「<b id="wsImportName"></b>」に入れる曲を選んでください。押すたびに入れる／外すが切り替わります。外しても曲自体は削除されません。</p>
+        <div class="ws-import-list" id="wsImportList"></div>
+        <div class="empty" id="wsImportEmpty" hidden>
+          <p class="big">登録された曲がありません</p>
+          <p>先に「曲を追加」から曲を登録してください。</p>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="wsImportCancelBtn">キャンセル</button>
+        <button type="button" class="btn primary" id="wsImportSaveBtn">この内容でインポート</button>
+      </div>
+    </dialog>
+
     <!-- ===== unlock dialog ===== -->
     <dialog id="unlockDlg">
       <form method="dialog" id="unlockForm" novalidate>
@@ -674,10 +954,57 @@
         return "h" + h.toString(36);
       }
       function normalizeData(s) {
+        var pieces = s && Array.isArray(s.pieces) ? s.pieces : [];
+        var workspaces = [];
+        if (s && Array.isArray(s.workspaces)) {
+          s.workspaces.forEach(function (w) {
+            if (!w || !w.id || !w.name) return;
+            var ids = Array.isArray(w.pieceIds) ? w.pieceIds.slice() : [];
+            workspaces.push({ id: String(w.id), name: String(w.name), pieceIds: ids.filter(function (id, i) { return ids.indexOf(id) === i; }) });
+          });
+        }
+        var activeWorkspaceId = s && s.activeWorkspaceId ? String(s.activeWorkspaceId) : "";
+        if (workspaces.length === 0) {
+          /* 既存データ（ワークスペース導入前）は、全曲入りの「メイン」へ引き継ぐ */
+          var wid = uid();
+          workspaces = [{ id: wid, name: "メイン", pieceIds: pieces.map(function (p) { return p.id; }) }];
+          activeWorkspaceId = wid;
+        }
+        if (!workspaces.some(function (w) { return w.id === activeWorkspaceId; })) activeWorkspaceId = workspaces[0].id;
         return {
-          pieces: s && Array.isArray(s.pieces) ? s.pieces : [],
-          settings: Object.assign({ notifyWithin: 7 }, (s && s.settings) || {})
+          pieces: pieces,
+          settings: Object.assign({ notifyWithin: 7 }, (s && s.settings) || {}),
+          workspaces: workspaces,
+          activeWorkspaceId: activeWorkspaceId
         };
+      }
+      /* ---------- workspaces (roadmap) ---------- */
+      function activeWorkspace() {
+        if (!state.workspaces || state.workspaces.length === 0) return null;
+        return state.workspaces.find(function (w) { return w.id === state.activeWorkspaceId; }) || state.workspaces[0];
+      }
+      function workspaceById(id) {
+        return (state.workspaces || []).find(function (w) { return w.id === id; }) || null;
+      }
+      function workspacePieceSet() {
+        var ws = activeWorkspace();
+        var set = {};
+        if (ws) ws.pieceIds.forEach(function (id) { if (byId(id)) set[id] = true; });
+        return set;
+      }
+      function workspacePieces() {
+        var set = workspacePieceSet();
+        return state.pieces.filter(function (p) { return set[p.id]; });
+      }
+      function wsCleanGroups(p, set) {
+        return cleanGroups(p).map(function (g) {
+          return g.filter(function (id) { return set[id]; });
+        }).filter(function (g) { return g.length > 0; });
+      }
+      function syncWorkspacePieceIds() {
+        (state.workspaces || []).forEach(function (w) {
+          w.pieceIds = w.pieceIds.filter(function (id) { return byId(id); });
+        });
       }
       function loadStore() {
         try {
@@ -921,6 +1248,23 @@
         state.pieces.forEach(depthOf);
         return depth;
       }
+      function computeDepthsFor(pieces, set) {
+        var depth = {}, visiting = {};
+        function depthOf(p) {
+          if (depth[p.id] != null) return depth[p.id];
+          if (visiting[p.id]) return 0;
+          visiting[p.id] = true;
+          var d = 0;
+          wsCleanGroups(p, set).forEach(function (g) {
+            g.forEach(function (id) { var q = byId(id); if (q) d = Math.max(d, depthOf(q) + 1); });
+          });
+          visiting[p.id] = false;
+          depth[p.id] = d; return d;
+        }
+        pieces.forEach(depthOf);
+        return depth;
+      }
+      function isDoneId(id) { var q = byId(id); return !!(q && q.status === "done"); }
 
       /* ================= profiles: UI / switch / CRUD / unlock ================= */
       function renderProfileUI() {
@@ -1187,62 +1531,320 @@
         $("#noMatch").hidden = !(state.pieces.length > 0 && list.length === 0);
         $("#count").textContent = state.pieces.length === 0 ? "" :
           "全" + state.pieces.length + "曲" + (list.length !== state.pieces.length ? "（" + list.length + "曲を表示）" : "");
+        var stc = { want: 0, doing: 0, done: 0 };
+        state.pieces.forEach(function (x) { if (stc[x.status] != null) stc[x.status]++; });
+        var setTxt = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+        setTxt("statAll", state.pieces.length); setTxt("statWant", stc.want); setTxt("statDoing", stc.doing); setTxt("statDone", stc.done);
+        var sfv = $("#fStatus").value;
+        document.querySelectorAll("[data-stat-filter]").forEach(function (b) {
+          b.setAttribute("aria-pressed", b.getAttribute("data-stat-filter") === sfv ? "true" : "false");
+        });
       }
 
       /* ================= rendering: roadmap ================= */
+      /* 線は「想定サイズ」ではなく、実際に描画された点（.port）の中心座標同士を
+         ベジエ曲線で結ぶ。カードの高さはタイトルの折り返しで変わるため、
+         先にカードを置いて実測し、行間も実測の高さ＋一定の隙間で積み上げる。 */
+      function bezierD(p0, p1) {
+        var dx = Math.max(36, Math.abs(p1.x - p0.x) * 0.5);
+        return { d: "M" + p0.x + " " + p0.y + " C " + (p0.x + dx) + " " + p0.y + ", " + (p1.x - dx) + " " + p1.y + ", " + p1.x + " " + p1.y, dx: dx };
+      }
+      function bezierMid(p0, p1, dx) {
+        return {
+          x: 0.125 * p0.x + 0.375 * (p0.x + dx) + 0.375 * (p1.x - dx) + 0.125 * p1.x,
+          y: 0.125 * p0.y + 0.375 * p0.y + 0.375 * p1.y + 0.125 * p1.y
+        };
+      }
+      function edgePill(x, y, text, kind) {
+        var w = text.length * 9 + 18;
+        var fill = kind === "and" ? "var(--accent)" : "var(--gold-soft)";
+        var fg = kind === "and" ? "var(--surface)" : "var(--gold)";
+        var stroke = kind === "and" ? "" : ' stroke="var(--gold)" stroke-width="1.5"';
+        return '<g><rect x="' + (x - w / 2) + '" y="' + (y - 10) + '" width="' + w + '" height="20" rx="10" fill="' + fill + '"' + stroke + "/>" +
+          '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="' + fg + '">' + text + "</text></g>";
+      }
+      function arrowHead(pt, color) {
+        /* 矢じりの先端は終点の点の中心そのもの。接線は水平なので真横から差し込む */
+        return '<path d="M' + pt.x + " " + pt.y + ' l -11 -5.5 v 11 z" fill="' + color + '"/>';
+      }
+      function renderWorkspaceBar() {
+        var sel = document.getElementById("wsSelect"); if (!sel) return;
+        var ws = activeWorkspace();
+        sel.innerHTML = (state.workspaces || []).map(function (w) {
+          return '<option value="' + esc(w.id) + '"' + (ws && w.id === ws.id ? " selected" : "") + ">" + esc(w.name) + "</option>";
+        }).join("");
+        if (ws) sel.value = ws.id;
+        var cnt = document.getElementById("wsCount");
+        if (cnt) cnt.textContent = ws ? "インポート済み " + workspacePieces().length + "曲 ／ 全" + state.pieces.length + "曲" : "";
+        var del = document.getElementById("wsDeleteBtn");
+        if (del) del.disabled = !ws;
+        var ren = document.getElementById("wsRenameBtn");
+        if (ren) ren.disabled = !ws;
+      }
       function renderRoadmap() {
+        renderWorkspaceBar();
         var canvas = $("#roadmapCanvas");
-        var connected = state.pieces.filter(function (p) {
-          if (cleanGroups(p).length > 0) return true;
-          return state.pieces.some(function (q) { return cleanGroups(q).some(function (g) { return g.indexOf(p.id) !== -1; }); });
-        });
-        $("#roadmapEmpty").hidden = connected.length !== 0;
-        $("#roadmapFrame").style.display = connected.length === 0 ? "none" : "";
-        if (connected.length === 0) { canvas.innerHTML = ""; return; }
-        var depths = computeDepths();
-        var NODE_W = 208, NODE_H = 96, GAP_X = 92, GAP_Y = 18, PAD = 22;
+        var allPieces = state.pieces;
+        var wsSet = workspacePieceSet();
+        var pieces = workspacePieces();
+        $("#roadmapEmpty").hidden = allPieces.length !== 0;
+        $("#wsEmpty").hidden = !(allPieces.length !== 0 && pieces.length === 0);
+        $("#roadmapFrame").style.display = pieces.length === 0 ? "none" : "";
+        if (pieces.length === 0) { canvas.innerHTML = ""; return; }
+        var depths = computeDepthsFor(pieces, wsSet);
+        var NODE_W = 216, GAP_X = 148, GAP_Y = 44, PAD = 38;
         var byDepth = {};
-        connected.forEach(function (p) { var d = depths[p.id] || 0; (byDepth[d] = byDepth[d] || []).push(p); });
+        pieces.forEach(function (p) { var d = depths[p.id] || 0; (byDepth[d] = byDepth[d] || []).push(p); });
         var depthKeys = Object.keys(byDepth).map(Number).sort(function (a, b) { return a - b; });
-        var pos = {}, maxRows = 0;
-        depthKeys.forEach(function (d) {
-          byDepth[d].sort(function (a, b) { return a.createdAt - b.createdAt; });
-          maxRows = Math.max(maxRows, byDepth[d].length);
-          byDepth[d].forEach(function (p, i) { pos[p.id] = { x: PAD + d * (NODE_W + GAP_X), y: PAD + i * (NODE_H + GAP_Y) }; });
-        });
+        depthKeys.forEach(function (d) { byDepth[d].sort(function (a, b) { return a.createdAt - b.createdAt; }); });
         var maxDepth = depthKeys[depthKeys.length - 1];
         var W = PAD * 2 + (maxDepth + 1) * NODE_W + maxDepth * GAP_X;
-        var H = PAD * 2 + maxRows * NODE_H + (maxRows - 1) * GAP_Y;
-        var paths = "";
-        connected.forEach(function (p) {
-          var gs = cleanGroups(p);
-          var isOr = gs.length > 1;
-          gs.forEach(function (g) {
-            g.forEach(function (id) {
-              if (!pos[id] || !pos[p.id]) return;
-              var x1 = pos[id].x + NODE_W, y1 = pos[id].y + NODE_H / 2;
-              var x2 = pos[p.id].x, y2 = pos[p.id].y + NODE_H / 2;
-              var mx = Math.max(28, (x2 - x1) / 2);
-              var color = isOr ? "var(--gold)" : "var(--ink-faint)";
-              paths += '<path d="M' + x1 + " " + y1 + " C " + (x1 + mx) + " " + y1 + ", " + (x2 - mx) + " " + y2 + ", " + (x2 - 7) + " " + y2 + '" fill="none" stroke="' + color + '" stroke-width="' + (isOr ? 2.6 : 2) + '"/>' +
-                '<path d="M' + x2 + " " + y2 + ' l -8 -4.5 v 9 z" fill="' + color + '"/>';
-            });
+        function preqSummary(p) {
+          var gs = wsCleanGroups(p, wsSet);
+          if (gs.length === 0) return "";
+          var parts = gs.map(function (g) {
+            var names = g.map(function (id) { var q = byId(id); return q ? esc(q.title) : ""; }).filter(function (s) { return s; });
+            return names.length > 1 ? "<b>" + names.join(" ＋ ") + "</b>（全部）" : names.join("");
           });
-        });
-        var nodes = connected.map(function (p) {
-          var d = depths[p.id] || 0, pp = pos[p.id];
+          return '<span class="preq">前提：' + parts.join(' <b>または</b> ') + "</span>";
+        }
+        var nodes = pieces.map(function (p) {
+          var d = depths[p.id] || 0;
+          var x = PAD + d * (NODE_W + GAP_X);
           var badge, cls = "";
+          var wsGs = wsCleanGroups(p, wsSet);
+          var wsReady = wsGs.length === 0 || wsGs.some(groupSatisfied);
           if (p.status === "done") { badge = '<span class="badge done">演奏済み</span>'; cls = " is-done"; }
-          else if (isReady(p)) { badge = '<span class="badge ready">今取り組める</span>'; cls = " is-ready"; }
+          else if (wsReady) { badge = '<span class="badge ready">今取り組める</span>'; cls = " is-ready"; }
           else { badge = '<span class="badge wait">前提待ち</span>'; }
-          return '<button type="button" class="rnode' + cls + '" data-node="' + p.id + '" style="left:' + pp.x + "px;top:" + pp.y + 'px">' +
+          return '<div class="rnode' + cls + '" data-node="' + p.id + '" role="button" tabindex="0" aria-label="' + esc(p.title) + '（押すと編集）" style="left:' + x + 'px;top:0px">' +
+            '<span class="port port-in" data-port="' + p.id + '" aria-hidden="true"></span>' +
+            '<span class="port port-out" data-port="' + p.id + '" aria-hidden="true"></span>' +
             '<span class="step">STEP ' + (d + 1) + "</span>" +
             '<span class="t" style="display:block">' + esc(p.title) + "</span>" +
             (p.composer ? '<span class="c">' + esc(p.composer) + "</span>" : "") +
-            "<br />" + badge + "</button>";
+            "<br />" + badge + preqSummary(p) + "</div>";
         }).join("");
-        canvas.style.width = W + "px"; canvas.style.height = H + "px";
-        canvas.innerHTML = '<svg width="' + W + '" height="' + H + '" aria-hidden="true">' + paths + "</svg>" + nodes;
+        canvas.style.width = W + "px";
+        canvas.style.height = "400px";
+        canvas.innerHTML = nodes + '<svg class="link-layer" id="linkLayer" width="' + W + '" height="400" aria-hidden="true"><path id="dragPath" fill="none" stroke-width="3" stroke-dasharray="6 4" style="display:none"/><circle id="dragStart" r="4" style="display:none"/><circle id="dragDot" r="4.5" style="display:none"/><path id="dragHead" style="display:none"/></svg>';
+        /* 実測：列ごとに実際の高さで積み上げ、カード間に必ず GAP_Y の隙間を作る */
+        var pos = {}, maxBottom = 0;
+        depthKeys.forEach(function (d) {
+          var cursor = PAD;
+          byDepth[d].forEach(function (p) {
+            var el = nodeEl(p.id); if (!el) return;
+            var h = el.offsetHeight;
+            pos[p.id] = { x: PAD + d * (NODE_W + GAP_X), y: cursor, h: h };
+            el.style.top = cursor + "px";
+            cursor += h + GAP_Y;
+          });
+          maxBottom = Math.max(maxBottom, cursor - GAP_Y);
+        });
+        var H = maxBottom + PAD;
+        canvas.style.height = H + "px";
+        var linkSvg = document.getElementById("linkLayer");
+        if (linkSvg) { linkSvg.setAttribute("width", W); linkSvg.setAttribute("height", H); }
+        /* 点の中心座標（キャンバス左上基準）を実測する */
+        var crect = canvas.getBoundingClientRect();
+        function portCenter(id, clsName) {
+          var el = nodeEl(id); if (!el) return null;
+          var port = el.querySelector(clsName); if (!port) return null;
+          var r = port.getBoundingClientRect();
+          return { x: r.left - crect.left + r.width / 2, y: r.top - crect.top + r.height / 2 };
+        }
+        var outC = {}, inC = {};
+        pieces.forEach(function (p) { outC[p.id] = portCenter(p.id, ".port-out"); inC[p.id] = portCenter(p.id, ".port-in"); });
+        /* 実線／点線の規則：出発側の曲が演奏済みなら、その曲から次の分岐点
+           （ANDの合流点）または相手カードまでは実線。未演奏なら点線。
+           ANDの合流点→相手カードの幹は、グループ全曲が演奏済みのときだけ実線。 */
+        function dashFor(done) { return done ? "" : ' stroke-dasharray="7 5"'; }
+        var enclosures = "";
+        var paths = "";
+        pieces.forEach(function (p) {
+          var target = inC[p.id]; if (!target) return;
+          var gs = wsCleanGroups(p, wsSet);
+          var multi = gs.length > 1; /* グループが複数＝OR（どれか1グループでよい） */
+          gs.forEach(function (g, gi) {
+            var members = g.filter(function (id) { return outC[id]; });
+            if (members.length === 0) return;
+            var isAnd = members.length > 1;
+            var color = multi ? "var(--gold)" : (isAnd ? "var(--accent)" : "var(--ink-faint)");
+            var orYOff = gi % 2 === 0 ? -20 : 26;
+            if (isAnd) {
+              /* AND：各曲からの線を合流点で1本に束ねてから相手の点の中心へ */
+              var maxOutX = Math.max.apply(null, members.map(function (id) { return outC[id].x; }));
+              var jx = maxOutX + (target.x - maxOutX) * 0.5;
+              var J = { x: jx, y: target.y };
+              var trunk = bezierD(J, target);
+              var allDone = members.every(isDoneId);
+              /* ANDグループを図形（囲み）でまとめる：メンバーカード群＋合流点を包む面 */
+              var xs = members.map(function (id) { return pos[id].x; }).concat([J.x]);
+              var ys = members.map(function (id) { return pos[id].y; }).concat([J.y]);
+              var xe = members.map(function (id) { return pos[id].x + NODE_W; }).concat([J.x]);
+              var ye = members.map(function (id) { return pos[id].y + pos[id].h; }).concat([J.y]);
+              var bx = Math.min.apply(null, xs) - 14, by = Math.min.apply(null, ys) - 20;
+              var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
+              var bh = Math.max.apply(null, ye) - Math.min.apply(null, ys) + 34;
+              enclosures += '<g><rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.55" stroke="var(--accent)" stroke-width="1.5"/></g>' +
+                edgePill(bx + 42, by, "AND", "and");
+              members.forEach(function (id) {
+                var b = bezierD(outC[id], J);
+                var done = isDoneId(id);
+                paths += '<path class="edge-hit" data-from="' + id + '" data-to="' + p.id + '" d="' + b.d + " " + trunk.d + '" fill="none" stroke="transparent" stroke-width="16"><title>クリックで接続を外す</title></path>' +
+                  '<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="' + (done ? 3.2 : 2.4) + '"' + dashFor(done) + "/>";
+              });
+              paths += '<path d="' + trunk.d + '" fill="none" stroke="' + color + '" stroke-width="' + (allDone ? 4 : 3.2) + '"' + dashFor(allDone) + "/>" +
+                '<circle cx="' + J.x + '" cy="' + J.y + '" r="5" fill="' + color + '"/>' +
+                edgePill(J.x, J.y - 22, "AND", "and") +
+                arrowHead(target, color);
+              if (multi) {
+                var midA = bezierMid(J, target, trunk.dx);
+                paths += edgePill(midA.x, midA.y + orYOff + 14, "OR", "or");
+              }
+            } else {
+              var done1 = isDoneId(members[0]);
+              var b1 = bezierD(outC[members[0]], target);
+              paths += '<path class="edge-hit" data-from="' + members[0] + '" data-to="' + p.id + '" d="' + b1.d + '" fill="none" stroke="transparent" stroke-width="16"><title>クリックで接続を外す</title></path>' +
+                '<path d="' + b1.d + '" fill="none" stroke="' + color + '" stroke-width="' + (done1 ? 3.2 : 2.4) + '"' + dashFor(done1) + "/>" +
+                arrowHead(target, color);
+              if (multi) {
+                var mid1 = bezierMid(outC[members[0]], target, b1.dx);
+                paths += edgePill(mid1.x, mid1.y + orYOff, "OR", "or");
+              }
+            }
+          });
+        });
+        canvas.insertAdjacentHTML("afterbegin", '<svg width="' + W + '" height="' + H + '" aria-hidden="true">' + enclosures + paths + "</svg>");
+      }
+
+      /* ================= roadmap: point-to-point drag linking ================= */
+      var dragState = null; /* {type:"link"|"card", fromId, startX, startY, moved, el, ax, ay, hoverId} */
+      var lastDragEnd = 0, lastDragMoved = false;
+      function nodeEl(id) { return $("#roadmapCanvas").querySelector('[data-node="' + id + '"]'); }
+      function hasEdge(fromId, toId) {
+        var t = byId(toId); if (!t) return false;
+        return cleanGroups(t).some(function (g) { return g.indexOf(fromId) !== -1; });
+      }
+      function connectPieces(fromId, toId) {
+        var from = byId(fromId), to = byId(toId);
+        if (!from || !to || fromId === toId) return;
+        if (hasEdge(fromId, toId)) { removeEdge(fromId, toId); return; }
+        if (hasEdge(toId, fromId)) { removeEdge(toId, fromId); return; } /* 逆向きに引き直しても外れる */
+        var gs = cleanGroups(to);
+        gs.push([fromId]); /* 並列の接続は、その曲だけの新しいグループ＝OR */
+        if (createsCycle(toId, gs)) { toast("その向きにつなぐと循環してしまうため、接続できません"); return; }
+        to.prereqGroups = gs;
+        saveState(); renderAll();
+        toast("「" + from.title + "」→「" + to.title + "」をつなぎました");
+      }
+      function removeEdge(fromId, toId) {
+        var from = byId(fromId), to = byId(toId); if (!to) return;
+        to.prereqGroups = cleanGroups(to).map(function (g) {
+          return g.filter(function (id) { return id !== fromId; });
+        }).filter(function (g) { return g.length > 0; });
+        saveState(); renderAll();
+        toast("「" + (from ? from.title : "") + "」→「" + to.title + "」の接続を外しました");
+      }
+      function andMergePieces(dragId, targetId) {
+        if (dragId === targetId) return;
+        var drag = byId(dragId), target = byId(targetId);
+        if (!drag || !target) return;
+        var changed = 0;
+        state.pieces.forEach(function (T) {
+          if (T.id === dragId || T.id === targetId) return;
+          var gs = cleanGroups(T);
+          var giD = -1, giT = -1;
+          gs.forEach(function (g, i) {
+            if (g.indexOf(dragId) !== -1) giD = i;
+            if (g.indexOf(targetId) !== -1) giT = i;
+          });
+          if (giD === -1 && giT === -1) return;
+          if (giD !== -1 && giD === giT) return; /* すでに同じANDグループ */
+          var merged = [];
+          [giD, giT].forEach(function (gi) {
+            if (gi === -1) return;
+            gs[gi].forEach(function (id) { if (merged.indexOf(id) === -1) merged.push(id); });
+          });
+          if (merged.indexOf(dragId) === -1) merged.push(dragId);
+          if (merged.indexOf(targetId) === -1) merged.push(targetId);
+          var rest = gs.filter(function (g, i) { return i !== giD && i !== giT; });
+          var ngs = rest.concat([merged]);
+          if (createsCycle(T.id, ngs)) return;
+          T.prereqGroups = ngs; changed++;
+        });
+        if (changed > 0) {
+          saveState(); renderAll();
+          toast("「" + drag.title + "」と「" + target.title + "」をANDグループにまとめました");
+        } else {
+          renderRoadmap();
+          toast("重ねた2曲が、まだ他の曲の前提になっていません。先にどちらかの点をドラッグして、他の曲へつないでください");
+        }
+      }
+      function canvasPoint(ev) {
+        var r = $("#roadmapCanvas").getBoundingClientRect();
+        return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+      }
+      function dragLayerParts() {
+        var layer = document.getElementById("linkLayer"); if (!layer) return null;
+        var path = document.getElementById("dragPath");
+        var head = document.getElementById("dragHead");
+        var dot = document.getElementById("dragDot");
+        var start = document.getElementById("dragStart");
+        if (!path || !head || !dot || !start) return null;
+        return { layer: layer, path: path, head: head, dot: dot, start: start };
+      }
+      function drawLinkLine(x1, y1, x2, y2, willRemove, dir, tone) {
+        var parts = dragLayerParts(); if (!parts) return;
+        /* 仮線レイヤーは常にキャンバスの一番手前に置く（他のSVG・カードより前面に出す） */
+        var canvas = $("#roadmapCanvas");
+        if (canvas && canvas.lastElementChild !== parts.layer) canvas.appendChild(parts.layer);
+        var color = willRemove ? "var(--danger)" : (tone === "gold" ? "var(--gold)" : "var(--accent)");
+        /* ドラッグ中の仮線：終点はカーソル／指の位置そのもの。
+           制御点2は「始点→カーソル」の向きの逆側に置くので、曲線の終端は
+           カーソルの方を向いて追従し、矢じりもその接線方向に回る。
+           描画はSVGの中身の差し替えではなく、あらかじめ置いたノードの
+           属性更新で行う（差し替えが描画に反映されないWebView等でも線が出るように）。 */
+        var vx = x2 - x1, vy = y2 - y1;
+        var dist = Math.sqrt(vx * vx + vy * vy) || 1;
+        var ux = vx / dist, uy = vy / dist;
+        var handle = Math.max(28, Math.min(120, dist * 0.38));
+        var exitDir = dir === -1 ? -1 : 1;
+        var c1x = x1 + exitDir * handle, c1y = y1;
+        var c2x = x2 - ux * handle, c2y = y2 - uy * handle;
+        var d = "M" + x1 + " " + y1 + " C " + c1x + " " + c1y + ", " + c2x + " " + c2y + ", " + x2 + " " + y2;
+        var ang = Math.atan2(y2 - c2y, x2 - c2x) * 180 / Math.PI;
+        parts.path.setAttribute("d", d);
+        parts.path.style.stroke = color;
+        parts.path.style.display = "";
+        parts.start.setAttribute("cx", x1); parts.start.setAttribute("cy", y1);
+        parts.start.style.fill = color;
+        parts.start.style.display = "";
+        parts.dot.setAttribute("cx", x2); parts.dot.setAttribute("cy", y2);
+        parts.dot.style.fill = color;
+        parts.dot.style.display = "";
+        parts.head.setAttribute("d", "M" + x2 + " " + y2 + " l -11 -5.5 v 11 z");
+        parts.head.setAttribute("transform", "rotate(" + ang + " " + x2 + " " + y2 + ")");
+        parts.head.style.fill = color;
+        parts.head.style.display = "";
+      }
+      function clearLinkLine() {
+        var parts = dragLayerParts(); if (!parts) return;
+        [parts.path, parts.head, parts.dot, parts.start].forEach(function (el) { el.style.display = "none"; });
+      }
+      function clearDropMarks() {
+        $("#roadmapCanvas").querySelectorAll(".rnode.drop-ok, .rnode.drop-remove, .rnode.stack-target, .rnode.link-source").forEach(function (n) {
+          n.classList.remove("drop-ok", "drop-remove", "stack-target", "link-source");
+        });
+      }
+      function nodeFromPoint(ev, excludeEl) {
+        var under = document.elementFromPoint(ev.clientX, ev.clientY);
+        if (!under || (excludeEl && under === excludeEl)) return null;
+        var node = under.closest ? under.closest("[data-node]") : null;
+        return node || null;
+      }
+      function resetDragEl(ds) {
+        if (ds && ds.el) { ds.el.style.transform = ""; ds.el.style.pointerEvents = ""; ds.el.classList.remove("dragging"); }
       }
 
       /* ================= rendering: schedule ================= */
@@ -1269,7 +1871,14 @@
         $("#schedArea").innerHTML = html;
       }
 
-      function renderAll() { renderProfileUI(); renderAlerts(); renderList(); renderRoadmap(); renderSchedule(); }
+      function renderAll() {
+        renderProfileUI(); renderAlerts(); renderList(); renderRoadmap(); renderSchedule();
+        var nl = document.getElementById("navCountList");
+        if (nl) { nl.textContent = state.pieces.length; nl.hidden = state.pieces.length === 0; }
+        var up = allEvents().filter(function (ev) { return daysLeft(ev.date) >= 0; }).length;
+        var ns = document.getElementById("navCountSched");
+        if (ns) { ns.textContent = up; ns.hidden = up === 0; }
+      }
 
       /* ================= editor ================= */
       var editor = $("#editor");
@@ -1392,21 +2001,110 @@
       var confirmDlg = $("#confirmDlg");
       var pendingDeleteId = null;
       var pendingProfileDeleteId = null;
+      var pendingWsDeleteId = null;
       function askDelete(id) {
         var p = byId(id); if (!p) return;
         pendingDeleteId = id;
         pendingProfileDeleteId = null;
+        pendingWsDeleteId = null;
         $("#confirmText").textContent = "「" + p.title + "」を削除します。この曲を前提にしている曲からは、前提の指定も外れます。";
         confirmDlg.showModal();
+      }
+      function askDeleteWorkspace() {
+        var ws = activeWorkspace(); if (!ws) return;
+        pendingDeleteId = null;
+        pendingProfileDeleteId = null;
+        pendingWsDeleteId = ws.id;
+        $("#confirmText").textContent = "ワークスペース「" + ws.name + "」を削除します。曲そのものは削除されず、曲一覧に残ります。";
+        confirmDlg.showModal();
+      }
+      function deleteWorkspace(id) {
+        state.workspaces = (state.workspaces || []).filter(function (w) { return w.id !== id; });
+        if (state.workspaces.length === 0) {
+          var wid = uid();
+          state.workspaces = [{ id: wid, name: "メイン", pieceIds: [] }];
+        }
+        if (!state.workspaces.some(function (w) { return w.id === state.activeWorkspaceId; })) {
+          state.activeWorkspaceId = state.workspaces[0].id;
+        }
+        saveState(); renderAll();
       }
       function askDeleteProfile() {
         var prof = activeProfile(); if (!prof) return;
         pendingDeleteId = null;
         pendingProfileDeleteId = prof.id;
+        pendingWsDeleteId = null;
         var d = store.data[prof.id];
         var n = d && Array.isArray(d.pieces) ? d.pieces.length : 0;
         $("#confirmText").textContent = "プロフィール「" + prof.name + "」を削除します。そのプロフィールの曲リスト（" + n + "曲）もすべて削除され、元に戻せません。";
         confirmDlg.showModal();
+      }
+
+      /* ================= workspaces: create / rename / import ================= */
+      var wsEditId = null;
+      function openWsDialog(editId) {
+        wsEditId = editId || null;
+        var ws = editId ? workspaceById(editId) : null;
+        document.getElementById("wsDlgTitle").textContent = ws ? "ワークスペースの名前変更" : "ワークスペースを作成";
+        var err = document.getElementById("wsFormError"); err.textContent = ""; err.style.display = "none";
+        document.getElementById("wsName").value = ws ? ws.name : "";
+        document.getElementById("wsDlg").showModal();
+        setTimeout(function () { document.getElementById("wsName").focus(); }, 30);
+      }
+      function saveWsFromForm(ev) {
+        ev.preventDefault();
+        var name = document.getElementById("wsName").value.trim();
+        if (!name) {
+          var err = document.getElementById("wsFormError");
+          err.textContent = "名前を入力してください。"; err.style.display = "block";
+          document.getElementById("wsName").focus(); return;
+        }
+        if (wsEditId) {
+          var ws = workspaceById(wsEditId); if (!ws) return;
+          ws.name = name;
+          saveState();
+          document.getElementById("wsDlg").close();
+          renderAll();
+          toast("ワークスペース名を「" + name + "」にしました");
+        } else {
+          var id = uid();
+          state.workspaces.push({ id: id, name: name, pieceIds: [] });
+          state.activeWorkspaceId = id;
+          saveState();
+          document.getElementById("wsDlg").close();
+          renderAll();
+          toast("ワークスペース「" + name + "」を作成しました。曲をインポートしてください");
+          openImportDialog();
+        }
+      }
+      var importSelection = null;
+      function renderImportList() {
+        var list = document.getElementById("wsImportList");
+        document.getElementById("wsImportEmpty").hidden = state.pieces.length !== 0;
+        list.innerHTML = state.pieces.map(function (p) {
+          var on = !!(importSelection && importSelection[p.id]);
+          return '<button type="button" class="ws-import-item" data-import-piece="' + esc(p.id) + '" aria-pressed="' + on + '">' +
+            '<span class="ttl">' + esc(p.title) + "</span>" +
+            '<span class="meta">' + esc(p.composer || "") + (p.composer ? " ／ " : "") + STATUS_LABEL[p.status] + "</span>" +
+            '<span class="mark">' + (on ? "インポート中" : "入れる") + "</span></button>";
+        }).join("");
+      }
+      function openImportDialog() {
+        var ws = activeWorkspace(); if (!ws) return;
+        importSelection = {};
+        ws.pieceIds.forEach(function (id) { importSelection[id] = true; });
+        document.getElementById("wsImportName").textContent = ws.name;
+        renderImportList();
+        document.getElementById("wsImportDlg").showModal();
+      }
+      function saveImport() {
+        var ws = activeWorkspace(); if (!ws || !importSelection) return;
+        ws.pieceIds = state.pieces.filter(function (p) { return importSelection[p.id]; }).map(function (p) { return p.id; });
+        importSelection = null;
+        saveState();
+        document.getElementById("wsImportDlg").close();
+        renderAll();
+        toast("ワークスペース「" + ws.name + "」に " + ws.pieceIds.length + " 曲をインポートしました");
       }
 
       /* ================= wiring ================= */
@@ -1432,6 +2130,38 @@
           if (curView === "roadmap") renderRoadmap();
         });
       });
+      document.querySelectorAll("[data-stat-filter]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          $("#fStatus").value = b.getAttribute("data-stat-filter");
+          renderList();
+        });
+      });
+      var moreDlgEl = document.getElementById("moreDlg");
+      $("#moreBtn").addEventListener("click", function () { if (moreDlgEl && !moreDlgEl.open) moreDlgEl.showModal(); });
+      $("#moreCloseBtn").addEventListener("click", function () { if (moreDlgEl) moreDlgEl.close(); });
+      /* スワイプでタブ移動（ロードマップのドラッグ操作とぶつかる場所は除く） */
+      (function () {
+        var order = ["list", "roadmap", "schedule"], sx = 0, sy = 0, tracking = false;
+        ["view-list", "view-roadmap", "view-schedule"].forEach(function (vid) {
+          var el = document.getElementById(vid); if (!el) return;
+          el.addEventListener("touchstart", function (ev) {
+            if (ev.touches.length !== 1) { tracking = false; return; }
+            if (ev.target.closest("#roadmapFrame, dialog, input, select, textarea")) { tracking = false; return; }
+            sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; tracking = true;
+          }, { passive: true });
+          el.addEventListener("touchend", function (ev) {
+            if (!tracking) return; tracking = false;
+            var t = ev.changedTouches[0]; if (!t) return;
+            var dx = t.clientX - sx, dy = t.clientY - sy;
+            if (Math.abs(dx) < 72 || Math.abs(dy) > 48) return;
+            var i = order.indexOf(curView);
+            var ni = dx < 0 ? Math.min(order.length - 1, i + 1) : Math.max(0, i - 1);
+            if (ni === i) return;
+            var btn = document.querySelector('.tabs.bottom-nav button[data-view="' + order[ni] + '"]');
+            if (btn) btn.click();
+          }, { passive: true });
+        });
+      })();
       ["q", "fGenre", "fEra", "fStatus", "sort"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", renderList);
         document.getElementById(id).addEventListener("change", renderList);
@@ -1439,11 +2169,36 @@
       $("#addBtn").addEventListener("click", function () { openEditor(null); });
       $("#emptyAddBtn").addEventListener("click", function () { openEditor(null); });
 
+      /* ---- workspace wiring ---- */
+      $("#wsSelect").addEventListener("change", function (ev) {
+        if (!workspaceById(ev.target.value)) { renderWorkspaceBar(); return; }
+        state.activeWorkspaceId = ev.target.value;
+        saveState(); renderRoadmap();
+        var ws = activeWorkspace();
+        if (ws) toast("ワークスペース「" + ws.name + "」に切り替えました");
+      });
+      $("#wsAddBtn").addEventListener("click", function () { openWsDialog(null); });
+      $("#wsRenameBtn").addEventListener("click", function () { var ws = activeWorkspace(); if (ws) openWsDialog(ws.id); });
+      $("#wsDeleteBtn").addEventListener("click", function () { askDeleteWorkspace(); });
+      $("#wsImportBtn").addEventListener("click", function () { openImportDialog(); });
+      $("#wsEmptyImportBtn").addEventListener("click", function () { openImportDialog(); });
+      $("#wsForm").addEventListener("submit", saveWsFromForm);
+      $("#wsCancelBtn").addEventListener("click", function () { document.getElementById("wsDlg").close(); });
+      $("#wsImportList").addEventListener("click", function (ev) {
+        var btn = ev.target.closest("[data-import-piece]"); if (!btn || !importSelection) return;
+        var id = btn.getAttribute("data-import-piece");
+        if (importSelection[id]) delete importSelection[id]; else importSelection[id] = true;
+        renderImportList();
+      });
+      $("#wsImportCancelBtn").addEventListener("click", function () { importSelection = null; document.getElementById("wsImportDlg").close(); });
+      $("#wsImportSaveBtn").addEventListener("click", function () { saveImport(); });
+
       $("#cards").addEventListener("click", function (ev) {
         if (handleIcsClick(ev)) return;
         var card = ev.target.closest(".card"); if (!card) return;
-        var actBtn = ev.target.closest("[data-act='edit']");
-        if (actBtn) openEditor(card.dataset.id);
+        if (ev.target.closest("[data-act='edit']")) { openEditor(card.dataset.id); return; }
+        if (ev.target.closest("select, a, button")) return; /* ステータス変更・リンク・ボタンはそのまま */
+        openEditor(card.dataset.id); /* カードのタップで編集（アプリらしく） */
       });
       $("#schedArea").addEventListener("click", function (ev) { handleIcsClick(ev); });
       $("#exportAllIcsBtn").addEventListener("click", function () {
@@ -1458,9 +2213,109 @@
         p.status = sel.value; saveState(); renderAll();
         toast("「" + p.title + "」を「" + STATUS_LABEL[p.status] + "」にしました");
       });
+      $("#roadmapCanvas").addEventListener("pointerdown", function (ev) {
+        var port = ev.target.closest ? ev.target.closest("[data-port]") : null;
+        var r = $("#roadmapCanvas").getBoundingClientRect();
+        if (port) {
+          ev.preventDefault(); ev.stopPropagation();
+          var pr = port.getBoundingClientRect();
+          dragState = {
+            type: "link", fromId: port.getAttribute("data-port"), el: null,
+            startX: ev.clientX, startY: ev.clientY, moved: false, hoverId: null,
+            dir: port.classList.contains("port-in") ? -1 : 1,
+            ax: pr.left - r.left + pr.width / 2, ay: pr.top - r.top + pr.height / 2
+          };
+          /* ポインタを捕まえて、指が他の要素の上に移っても move/up を受け続ける */
+          if (port.setPointerCapture) { try { port.setPointerCapture(ev.pointerId); } catch (err) {} }
+          /* ドラッグ開始直後から、点の中心から現在のポインタ位置へ仮線を出す */
+          var startPt = canvasPoint(ev);
+          drawLinkLine(dragState.ax, dragState.ay, startPt.x, startPt.y, false, dragState.dir);
+          var src = nodeEl(dragState.fromId); if (src) src.classList.add("link-source");
+          return;
+        }
+        var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
+        if (node) {
+          var outP = node.querySelector(".port-out");
+          var orr = outP ? outP.getBoundingClientRect() : node.getBoundingClientRect();
+          dragState = {
+            type: "card", fromId: node.getAttribute("data-node"), el: node,
+            startX: ev.clientX, startY: ev.clientY, moved: false, hoverId: null,
+            ax: orr.left - r.left + orr.width / 2, ay: orr.top - r.top + orr.height / 2
+          };
+        }
+      });
+      window.addEventListener("pointermove", function (ev) {
+        if (!dragState) return;
+        var dx = ev.clientX - dragState.startX, dy = ev.clientY - dragState.startY;
+        if (!dragState.moved && Math.sqrt(dx * dx + dy * dy) < (dragState.type === "link" ? 3 : 6)) return;
+        if (!dragState.moved && dragState.type === "card" && dragState.el) dragState.el.style.pointerEvents = "none";
+        dragState.moved = true;
+        if (dragState.type === "link") {
+          ev.preventDefault();
+          var node = nodeFromPoint(ev, null);
+          var hid = node ? node.getAttribute("data-node") : null;
+          var willRemove = !!(hid && hid !== dragState.fromId && (hasEdge(dragState.fromId, hid) || hasEdge(hid, dragState.fromId)));
+          var pt = canvasPoint(ev);
+          drawLinkLine(dragState.ax, dragState.ay, pt.x, pt.y, willRemove, dragState.dir);
+          if (hid !== dragState.hoverId) {
+            dragState.hoverId = hid;
+            clearDropMarks();
+            var src = nodeEl(dragState.fromId); if (src) src.classList.add("link-source");
+            if (node && hid !== dragState.fromId) node.classList.add(willRemove ? "drop-remove" : "drop-ok");
+          }
+        } else if (dragState.type === "card" && dragState.el) {
+          ev.preventDefault();
+          dragState.el.style.transform = "translate(" + dx + "px," + dy + "px)";
+          dragState.el.classList.add("dragging");
+          /* カード自体のドラッグ中も、出口の点（カードと一緒に動く）からポインタへ金色のガイド線を出す */
+          var cpt = canvasPoint(ev);
+          drawLinkLine(dragState.ax + dx, dragState.ay + dy, cpt.x, cpt.y, false, 1, "gold");
+          var node2 = nodeFromPoint(ev, dragState.el);
+          var hid2 = node2 ? node2.getAttribute("data-node") : null;
+          if (hid2 !== dragState.hoverId) {
+            dragState.hoverId = hid2;
+            $("#roadmapCanvas").querySelectorAll(".rnode.stack-target").forEach(function (n) { n.classList.remove("stack-target"); });
+            if (node2 && hid2 !== dragState.fromId) node2.classList.add("stack-target");
+          }
+        }
+      }, { passive: false });
+      /* ドラッグ中に画面やキャンバスのスクロールへ奪われて仮線が消えないよう、ドラッグ中のタッチ移動は止める */
+      document.addEventListener("touchmove", function (ev) { if (dragState) ev.preventDefault(); }, { passive: false });
+      window.addEventListener("pointerup", function (ev) {
+        if (!dragState) return;
+        var ds = dragState; dragState = null;
+        lastDragEnd = Date.now(); lastDragMoved = ds.moved;
+        clearLinkLine(); clearDropMarks();
+        if (!ds.moved) { resetDragEl(ds); return; }
+        if (ds.type === "link") {
+          var node = nodeFromPoint(ev, null);
+          var tid = node ? node.getAttribute("data-node") : null;
+          if (tid && tid !== ds.fromId) connectPieces(ds.fromId, tid);
+        } else {
+          var node2 = nodeFromPoint(ev, ds.el);
+          var tid2 = node2 ? node2.getAttribute("data-node") : null;
+          resetDragEl(ds);
+          if (tid2 && tid2 !== ds.fromId) andMergePieces(ds.fromId, tid2);
+          else renderRoadmap();
+        }
+      });
+      window.addEventListener("pointercancel", function () {
+        if (!dragState) return;
+        resetDragEl(dragState);
+        dragState = null;
+        clearLinkLine(); clearDropMarks();
+      });
       $("#roadmapCanvas").addEventListener("click", function (ev) {
-        var node = ev.target.closest("[data-node]");
+        if (lastDragMoved && Date.now() - lastDragEnd < 300) return; /* ドラッグ直後のクリックは編集を開かない */
+        var hit = ev.target.closest ? ev.target.closest(".edge-hit") : null;
+        if (hit) { removeEdge(hit.getAttribute("data-from"), hit.getAttribute("data-to")); return; }
+        var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
         if (node) openEditor(node.dataset.node);
+      });
+      $("#roadmapCanvas").addEventListener("keydown", function (ev) {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
+        if (node && ev.target === node) { ev.preventDefault(); openEditor(node.dataset.node); }
       });
 
       $("#starRow").addEventListener("click", function (ev) {
@@ -1503,8 +2358,16 @@
       $("#editForm").addEventListener("submit", saveFromForm);
       $("#cancelBtn").addEventListener("click", closeEditor);
       $("#deleteBtn").addEventListener("click", function () { closeEditor(); askDelete(editingId); });
-      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; pendingProfileDeleteId = null; });
+      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; pendingProfileDeleteId = null; pendingWsDeleteId = null; });
       $("#confirmYes").addEventListener("click", function () {
+        if (pendingWsDeleteId) {
+          var wsTargetId = pendingWsDeleteId;
+          pendingWsDeleteId = null;
+          confirmDlg.close();
+          deleteWorkspace(wsTargetId);
+          toast("ワークスペースを削除しました");
+          return;
+        }
         if (pendingProfileDeleteId) {
           var targetId = pendingProfileDeleteId;
           pendingProfileDeleteId = null;
@@ -1515,6 +2378,7 @@
         if (!pendingDeleteId) return;
         var p = byId(pendingDeleteId);
         state.pieces = state.pieces.filter(function (x) { return x.id !== pendingDeleteId; });
+        syncWorkspacePieceIds();
         saveState(); confirmDlg.close(); pendingDeleteId = null; renderAll();
         toast("「" + (p ? p.title : "") + "」を削除しました");
       });
@@ -1586,7 +2450,7 @@
       });
       $("#exportBtn").addEventListener("click", function () {
         var prof = activeProfile();
-        var blob = new Blob([JSON.stringify({ app: "song-planner-pages", version: 1, profileName: prof ? prof.name : "", pieces: state.pieces, settings: state.settings }, null, 2)], { type: "application/json" });
+        var blob = new Blob([JSON.stringify({ app: "song-planner-pages", version: 2, profileName: prof ? prof.name : "", pieces: state.pieces, settings: state.settings, workspaces: state.workspaces, activeWorkspaceId: state.activeWorkspaceId }, null, 2)], { type: "application/json" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         var d = new Date();
@@ -1615,6 +2479,11 @@
             });
             state.pieces = pieces;
             if (data.settings) state.settings = Object.assign(state.settings, data.settings);
+            /* ワークスペースも取り込む（無い形式のJSONは全曲入りの「メイン」にする） */
+            var nd = normalizeData({ pieces: pieces, settings: state.settings, workspaces: data.workspaces, activeWorkspaceId: data.activeWorkspaceId });
+            state.workspaces = nd.workspaces;
+            state.activeWorkspaceId = nd.activeWorkspaceId;
+            syncWorkspacePieceIds();
             notifySel.value = String(state.settings.notifyWithin);
             saveState(); renderAll();
             toast(pieces.length + "曲を読み込みました（このプロフィールの既存データと置き換え）");
