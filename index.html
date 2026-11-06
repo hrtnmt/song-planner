@@ -326,6 +326,26 @@
       .sched-row .what { flex: 1 1 220px; }
       .sched-row .what .title { font-family: "Shippori Mincho B1", serif; font-weight: 700; }
       .sched-row.past { opacity: .55; }
+      /* 目安（推定）行：確定した日程より薄く・点線枠で出す */
+      .sched-row.estimated {
+        opacity: .62; border-style: dashed; background: transparent; box-shadow: none;
+      }
+      .sched-row.estimated .date { font-weight: 500; }
+      .sched-row.estimated .what .title { font-weight: 500; }
+      .sched-row.estimated.past { opacity: .45; }
+      .kind.est { background: var(--surface-2); color: var(--ink-soft); border: 1px dashed var(--ink-faint); }
+      .est-tag {
+        font-size: 11px; font-weight: 700; color: var(--ink-faint);
+        border: 1px solid var(--ink-faint); border-radius: 999px; padding: 0 7px; line-height: 1.7; white-space: nowrap;
+      }
+      .est-reason { display: block; font-size: 12px; color: var(--ink-faint); line-height: 1.5; }
+      .est-guide {
+        border: 1px dashed var(--line); border-radius: var(--radius);
+        padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--ink-soft);
+      }
+      .est-guide b { color: var(--ink); }
+      .est-guide p { margin: 0; }
+      .est-guide p + p { margin-top: 4px; }
       h2.section { font-family: "Shippori Mincho B1", serif; font-size: 19px; margin: 22px 0 10px; }
 
       /* ---------- data / settings ---------- */
@@ -693,10 +713,14 @@
           </button>
           <span class="note">書き出したファイルをGoogleカレンダー（設定 → インポート）に読み込むと、まとめて登録できます。各予定には7日前・3日前・前日のアラームが入ります。</span>
         </div>
+        <div class="est-guide" id="estGuide">
+          <p><b>薄く点線で表示されるのは「目安」です。</b>締切（譜読み開始日）を設定していない曲も、目安として入れています。内訳は <b>譜読み〜通せるようになるまで 3ヶ月 ＋ 表現の仕上げ 1ヶ月 ＝ 計4ヶ月</b> です。</p>
+          <p>本番だけ設定されている曲は、<b>本番の4ヶ月前</b>を譜読み開始の目安にしています。日程が何もない曲は、ロードマップのつながり（前提の曲が仕上がる頃／この曲を前提にする曲の開始に間に合う頃）から期間を割り出し、つながりがない曲は今から順に取り組む想定で並べています。目安はカレンダーには書き出されません。実際の日程は曲の編集画面で登録してください。</p>
+        </div>
         <div id="schedArea"></div>
         <div class="empty" id="schedEmpty" hidden>
           <p class="big">日程が登録された曲はまだありません</p>
-          <p>曲の編集画面で、譜読み開始日・仕上げ期限・本番を登録すると、ここに時系列で並びます。</p>
+          <p>曲の編集画面で、譜読み開始日・仕上げ期限・本番を登録すると、ここに時系列で並びます。日程が何もない曲は、ロードマップのつながりから割り出した目安が薄く表示されます。</p>
         </div>
       </section>
 
@@ -1292,6 +1316,178 @@
       function allEvents() {
         var evs = [];
         state.pieces.forEach(function (p) { evs = evs.concat(pieceEvents(p)); });
+        evs.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+        return evs;
+      }
+
+      /* ================= estimated schedule（締切未設定の曲の目安） =================
+         内訳は固定：譜読み〜通せるようになるまで3ヶ月 ＋ 表現の仕上げ1ヶ月 ＝ 計4ヶ月。
+         ・本番だけある曲 … 本番の4ヶ月前を開始目安、1ヶ月前を仕上げ入り目安とする
+         ・仕上げ期限だけある曲 … 期限の4ヶ月前を開始目安とする
+         ・日程が何もない曲 … ロードマップのつながりから割り出す
+             後ろに本番等で日程が決まっている曲がつながっていれば、その開始に
+             間に合うよう逆算する。前提の曲に日程／目安があれば、その仕上がり
+             の頃から始める。どちらも無ければ、今から順に取り組む想定で、
+             前提の深さと弾きたい度を優先して4ヶ月ずつずらして置く。
+         演奏済みの曲と、すでに譜読み開始日がある曲には目安を付けない。 */
+      function dateToStr(d) {
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      }
+      function addMonthsStr(s, n) {
+        var d = parseDate(s); if (!d) return "";
+        var day = d.getDate();
+        d.setDate(1);
+        d.setMonth(d.getMonth() + n);
+        var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        d.setDate(Math.min(day, last));
+        return dateToStr(d);
+      }
+      function earliestConcertDate(p) {
+        var ds = (p.concerts || []).map(function (c) { return c.date; }).filter(function (d) { return !!parseDate(d); }).sort();
+        return ds.length ? ds[0] : "";
+      }
+      function earliestConcert(p) {
+        var cs = (p.concerts || []).filter(function (c) { return !!parseDate(c.date); })
+          .slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+        return cs.length ? cs[0] : null;
+      }
+      function computeEstimates() {
+        var est = {}; /* id -> {start, polish, finish, source, reason} */
+        function setEst(p, start, source, reason, finish, polish) {
+          if (!start || est[p.id]) return;
+          est[p.id] = {
+            start: start,
+            polish: polish || addMonthsStr(start, 3),
+            finish: finish || addMonthsStr(start, 4),
+            source: source,
+            reason: reason
+          };
+        }
+        function knownStart(p) {
+          if (p.start) return p.start;
+          if (est[p.id]) return est[p.id].start;
+          var c = earliestConcertDate(p);
+          if (c) return addMonthsStr(c, -4);
+          if (p.deadline) return addMonthsStr(p.deadline, -4);
+          return "";
+        }
+        function knownEnd(p) {
+          if (est[p.id]) return est[p.id].finish;
+          if (p.deadline) return p.deadline;
+          var c = earliestConcertDate(p);
+          if (c) return c;
+          if (p.start) return addMonthsStr(p.start, 4);
+          return "";
+        }
+        /* --- 1) 本番だけ／期限だけある曲：4ヶ月前を開始目安にする --- */
+        state.pieces.forEach(function (p) {
+          if (p.status === "done" || p.start) return;
+          var c = earliestConcert(p);
+          if (c) {
+            setEst(p, addMonthsStr(c.date, -4), "concert",
+              "本番" + (c.name ? "「" + c.name + "」" : "") + "の4ヶ月前（譜読み3ヶ月＋仕上げ1ヶ月）",
+              c.date, addMonthsStr(c.date, -1));
+          } else if (p.deadline) {
+            setEst(p, addMonthsStr(p.deadline, -4), "deadline",
+              "仕上げ期限の4ヶ月前（譜読み3ヶ月＋仕上げ1ヶ月）",
+              p.deadline, addMonthsStr(p.deadline, -1));
+          }
+        });
+        /* --- 2) 日程が何もない曲：ロードマップのつながりから割り出す --- */
+        var undated = state.pieces.filter(function (p) {
+          return p.status !== "done" && !p.start && !p.deadline && !earliestConcertDate(p);
+        });
+        for (var iter = 0; iter < undated.length + 2; iter++) {
+          var changed = false;
+          undated.forEach(function (p) {
+            if (est[p.id]) return;
+            /* 後ろ向き：この曲を前提にする曲の開始（確定／目安）に間に合わせる */
+            var succ = [];
+            state.pieces.forEach(function (s) {
+              if (s.id === p.id) return;
+              var isPre = cleanGroups(s).some(function (g) { return g.indexOf(p.id) !== -1; });
+              if (!isPre) return;
+              var ks = knownStart(s);
+              if (ks) succ.push({ date: ks, title: s.title });
+            });
+            if (succ.length) {
+              succ.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+              setEst(p, addMonthsStr(succ[0].date, -4), "chain-back",
+                "「" + succ[0].title + "」の譜読み開始（目安）に間に合わせる想定：その4ヶ月前から",
+                succ[0].date, addMonthsStr(succ[0].date, -1));
+              changed = true;
+              return;
+            }
+            /* 前向き：前提の曲の仕上がり（確定／目安）の頃から始める。
+               OR候補が複数あるときは一番早く仕上がる前提に合わせる */
+            var preEnds = [];
+            cleanGroups(p).forEach(function (g) {
+              var ends = g.map(function (id) { var q = byId(id); return q ? knownEnd(q) : ""; }).filter(function (d) { return !!d; });
+              if (ends.length === g.length && ends.length) {
+                ends.sort();
+                preEnds.push({ date: ends[ends.length - 1], title: (byId(g[0]) || {}).title || "" });
+              }
+            });
+            if (preEnds.length) {
+              preEnds.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+              var anchor = preEnds[0];
+              var preTitle = "";
+              cleanGroups(p).forEach(function (g) { g.forEach(function (id) { var q = byId(id); if (q && knownEnd(q) === anchor.date) preTitle = q.title; }); });
+              setEst(p, anchor.date, "chain-forward",
+                "前提の「" + (preTitle || anchor.title) + "」が仕上がる頃から（譜読み3ヶ月＋仕上げ1ヶ月）");
+              changed = true;
+            }
+          });
+          if (!changed) break;
+        }
+        /* --- 3) それでも決まらない曲：今から順に取り組む想定で置く --- */
+        var remaining = undated.filter(function (p) { return !est[p.id]; });
+        if (remaining.length) {
+          var depths = computeDepths();
+          remaining.sort(function (a, b) {
+            return ((depths[a.id] || 0) - (depths[b.id] || 0)) ||
+              ((b.want || 1) - (a.want || 1)) ||
+              ((a.createdAt || 0) - (b.createdAt || 0));
+          });
+          var todayStr = dateToStr(todayStart());
+          var rootSlot = 0;
+          remaining.forEach(function (p) {
+            var preDates = [];
+            cleanGroups(p).forEach(function (g) {
+              g.forEach(function (id) { var q = byId(id); if (q && est[q.id]) preDates.push(est[q.id].finish); });
+            });
+            if (preDates.length) {
+              preDates.sort();
+              setEst(p, preDates[preDates.length - 1], "chain-forward",
+                "前提の曲が仕上がる頃から（譜読み3ヶ月＋仕上げ1ヶ月）");
+            } else if (p.status === "doing") {
+              setEst(p, todayStr, "free",
+                "練習中だが日程が未設定のため、今から仕上げまで4ヶ月と想定（譜読み3ヶ月＋仕上げ1ヶ月）");
+            } else {
+              var start = addMonthsStr(todayStr, rootSlot * 4);
+              rootSlot++;
+              setEst(p, start, "free",
+                rootSlot <= 1
+                  ? "日程もつながりもないため、今から取り組む想定（譜読み3ヶ月＋仕上げ1ヶ月）"
+                  : "日程もつながりもないため、前の曲が仕上がる頃から順に取り組む想定（譜読み3ヶ月＋仕上げ1ヶ月）");
+            }
+          });
+        }
+        return est;
+      }
+      function estimateEvents() {
+        var est = computeEstimates();
+        var evs = [];
+        Object.keys(est).forEach(function (id) {
+          var p = byId(id); if (!p) return;
+          var e = est[id];
+          evs.push({ pieceId: id, kind: "est-start", label: "譜読み開始（目安）", name: "", date: e.start, est: true, reason: e.reason, source: e.source });
+          evs.push({ pieceId: id, kind: "est-polish", label: "表現の仕上げ入り（目安）", name: "", date: e.polish, est: true, reason: "譜読み開始（目安）から3ヶ月：ここから仕上げの1ヶ月", source: e.source });
+          /* 本番がそのまま仕上がりの日になる場合は、本番（確定）側で表示されるので重ねない */
+          if (e.source !== "concert") {
+            evs.push({ pieceId: id, kind: "est-finish", label: "仕上げ完了（目安）", name: "", date: e.finish, est: true, reason: e.reason, source: e.source });
+          }
+        });
         evs.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
         return evs;
       }
@@ -2094,12 +2290,26 @@
 
       /* ================= rendering: schedule ================= */
       function renderSchedule() {
-        var evs = allEvents();
+        var evs = allEvents().concat(estimateEvents());
+        evs.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
         $("#schedEmpty").hidden = evs.length !== 0;
+        var guide = document.getElementById("estGuide");
+        if (guide) guide.hidden = !evs.some(function (ev) { return ev.est; });
         var upcoming = evs.filter(function (ev) { return daysLeft(ev.date) >= 0; });
         var past = evs.filter(function (ev) { return daysLeft(ev.date) < 0; }).reverse();
         function row(ev, isPast) {
           var p = byId(ev.pieceId); if (!p) return "";
+          if (ev.est) {
+            return '<div class="sched-row estimated' + (isPast ? " past" : "") + '">' +
+              '<span class="date">' + fmtDate(ev.date) + "</span>" +
+              '<span class="kind est">' + esc(ev.label) + "</span>" +
+              '<span class="what"><span class="title">' + esc(p.title) + "</span>" +
+                (p.composer ? "（" + esc(p.composer) + "）" : "") +
+                (ev.reason ? '<span class="est-reason">' + esc(ev.reason) + "</span>" : "") + "</span>" +
+              '<span class="est-tag">目安</span>' +
+              (isPast ? '<span class="days-badge">' + Math.abs(daysLeft(ev.date)) + "日前</span>" : daysBadge(daysLeft(ev.date))) +
+            "</div>";
+          }
           return '<div class="sched-row' + (isPast ? " past" : "") + '">' +
             '<span class="date">' + fmtDate(ev.date) + "</span>" +
             '<span class="kind ' + ev.kind + '">' + esc(ev.label) + "</span>" +
