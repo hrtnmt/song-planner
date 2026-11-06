@@ -840,6 +840,10 @@
       }
       #view-roadmap .rm-zoom button#rmFit { font-size: 11.5px; min-width: 0; }
 
+      /* ロードマップ表示中は、通知（トースト）を下端中央のツールバーより上に出す。
+         通常位置（下から88px）だと拡大縮小ボタンと重なってしまうため */
+      body.roadmap-on .toast { bottom: calc(158px + env(safe-area-inset-bottom, 0px)); }
+
       /* 空状態はキャンバスの中央に */
       #view-roadmap .empty {
         position: absolute; z-index: 6; left: 12px; right: 12px; top: 50%;
@@ -1014,93 +1018,6 @@
         .roadmap-canvas.linking .rnode:not(.link-source) .port { animation: none; }
         .card.just-cleared::after { display: none; }
         .rnode.dragging { transform: none; }
-      }
-    </style>
-    <style id="ui-refresh">
-      /* ===== UI整理（β前）：
-         ・破壊的な「削除」を控えめにし、誤タップを防ぐ
-         ・セレクトは独自の矢印で文字が切れにくく
-         ・カード下部の操作を1行に揃える
-         ・PCでは絞り込みを1行、下部ナビを中央の浮いたピルに ===== */
-
-      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-      /* --- ヘッダー：削除は文字だけ・控えめに --- */
-      .profile-actions .btn.small.danger {
-        background: transparent; border-color: transparent; color: var(--ink-faint);
-      }
-      .profile-actions .btn.small.danger:hover,
-      .profile-actions .btn.small.danger:focus-visible {
-        color: var(--danger); background: var(--danger-soft);
-      }
-
-      /* --- セレクト：独自の矢印で文字の余白を確保 --- */
-      .filters select, .card .foot .status-select {
-        -webkit-appearance: none; appearance: none;
-        background-color: var(--surface);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8378' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat; background-position: right 9px center; background-size: 13px;
-        padding-right: 28px !important; text-overflow: ellipsis; white-space: nowrap;
-      }
-      .filters select { padding-left: 12px !important; color: var(--ink-soft); }
-      @media (max-width: 480px) {
-        .filters select { font-size: 12px; padding-left: 9px !important; padding-right: 22px !important; background-position: right 6px center; background-size: 12px; letter-spacing: -.02em; }
-      }
-      .filters select:hover, .card .foot .status-select:hover { border-color: var(--ink-faint); }
-
-      /* --- 一覧ヘッダー：下にふんわり境界 --- */
-      .list-head { box-shadow: 0 10px 12px -12px rgba(35, 32, 27, .18); }
-      .count { color: var(--ink-faint); letter-spacing: .02em; }
-
-      /* --- カード：ホバーで持ち上がる＆下部操作は1行 --- */
-      .card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-      @media (hover: hover) {
-        .card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(35,32,27,.06), 0 12px 28px rgba(35,32,27,.10); }
-      }
-      .card .foot {
-        display: flex; flex-wrap: nowrap; align-items: center; gap: 8px;
-        border-top: 1px solid var(--line); margin-top: 2px;
-      }
-      .card .foot > .chip { display: none; }
-      .card .foot .spacer { flex: 1 1 auto; }
-      .card .foot .iconbtn, .card .foot .status-select {
-        min-height: 36px; padding-top: 6px; padding-bottom: 6px; border-radius: 999px; font-size: 12.5px; white-space: nowrap;
-      }
-      .card .foot .status-select { flex: 0 1 auto; min-width: 0; max-width: 46%; padding-left: 12px; }
-      .card .foot .iconbtn[data-act="edit"] {
-        background: var(--ink); color: var(--surface); border-color: var(--ink); font-weight: 700;
-      }
-
-      /* --- PC：絞り込み1行、下部ナビは中央のピル --- */
-      @media (min-width: 900px) {
-        .filters { flex-wrap: nowrap; }
-        .filters .searchbox { flex: 1 1 auto; min-width: 220px; }
-        .filters .searchbox input { padding-top: 10px; padding-bottom: 10px; }
-        .filters select { flex: 0 0 auto; width: auto; min-width: 150px; min-height: 44px; }
-        .stat-strip button { padding-top: 7px; padding-bottom: 7px; font-size: 12.5px; }
-
-        .tabs.bottom-nav {
-          width: auto; align-self: center; margin: 0 auto 14px; justify-content: center; padding: 6px;
-          border: 1px solid var(--line); border-radius: 999px;
-          box-shadow: 0 2px 4px rgba(35,32,27,.05), 0 10px 30px rgba(35,32,27,.12);
-        }
-        .tabs.bottom-nav button {
-          flex-direction: row; justify-content: center; gap: 8px;
-          flex: 0 0 auto; padding: 9px 20px; border-radius: 999px; font-size: 13px; white-space: nowrap;
-        }
-        .tabs.bottom-nav button svg { width: 18px; height: 18px; }
-        .tabs.bottom-nav .nav-badge { position: static; margin-left: -2px; }
-        .tabs.bottom-nav button:hover:not([aria-selected="true"]) { background: var(--surface-2); color: var(--ink); }
-        .btn.fab { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
-      }
-      @media (prefers-color-scheme: dark) {
-        .list-head { box-shadow: 0 10px 12px -12px rgba(0,0,0,.6); }
-        .filters select, .card .foot .status-select {
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237e7769' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .card, .card:hover { transition: none; transform: none; }
       }
     </style>
   </head>
@@ -1616,7 +1533,15 @@
           s.workspaces.forEach(function (w) {
             if (!w || !w.id || !w.name) return;
             var ids = Array.isArray(w.pieceIds) ? w.pieceIds.slice() : [];
-            workspaces.push({ id: String(w.id), name: String(w.name), pieceIds: ids.filter(function (id, i) { return ids.indexOf(id) === i; }) });
+            /* ロードマップ上のカード位置（置いた場所を保持し、再描画で初期位置に戻さない） */
+            var np = {};
+            if (w.nodePos && typeof w.nodePos === "object") {
+              Object.keys(w.nodePos).forEach(function (pid) {
+                var v = w.nodePos[pid];
+                if (v && isFinite(v.x) && isFinite(v.y)) np[pid] = { x: Math.round(v.x), y: Math.round(v.y) };
+              });
+            }
+            workspaces.push({ id: String(w.id), name: String(w.name), pieceIds: ids.filter(function (id, i) { return ids.indexOf(id) === i; }), nodePos: np });
           });
         }
         var activeWorkspaceId = s && s.activeWorkspaceId ? String(s.activeWorkspaceId) : "";
@@ -1660,6 +1585,7 @@
       function syncWorkspacePieceIds() {
         (state.workspaces || []).forEach(function (w) {
           w.pieceIds = w.pieceIds.filter(function (id) { return byId(id); });
+          if (w.nodePos) Object.keys(w.nodePos).forEach(function (id) { if (!byId(id)) delete w.nodePos[id]; });
         });
       }
       function loadStore() {
@@ -2723,6 +2649,11 @@
         depthKeys.forEach(function (d) { byDepth[d].sort(function (a, b) { return a.createdAt - b.createdAt; }); });
         var maxDepth = depthKeys[depthKeys.length - 1];
         var W = PAD * 2 + (maxDepth + 1) * NODE_W + maxDepth * GAP_X;
+        /* 一度置いたカードの位置はワークスペースに保存して使い回す。
+           接続を切って深さが変わっても、カードが初期位置へ飛ばないようにするため */
+        var wsObj = activeWorkspace();
+        var savedPos = (wsObj && wsObj.nodePos) || {};
+        function colOfX(x) { return Math.max(0, Math.round((x - PAD) / (NODE_W + GAP_X))); }
         function preqSummary(p) {
           var gs = wsCleanGroups(p, wsSet);
           if (gs.length === 0) return "";
@@ -2733,8 +2664,9 @@
           return '<span class="preq">前提：' + parts.join(' <b>または</b> ') + "</span>";
         }
         var nodes = pieces.map(function (p) {
-          var d = depths[p.id] || 0;
-          var x = PAD + d * (NODE_W + GAP_X);
+          var sp = savedPos[p.id];
+          var d = sp ? colOfX(sp.x) : (depths[p.id] || 0);
+          var x = sp ? sp.x : PAD + d * (NODE_W + GAP_X);
           var badge, cls = "";
           var wsGs = wsCleanGroups(p, wsSet);
           var wsReady = wsGs.length === 0 || wsGs.some(groupSatisfied);
@@ -2753,21 +2685,53 @@
         }).join("");
         canvas.style.width = W + "px";
         canvas.style.height = "400px";
-        canvas.style.transform = ""; rmZoom = 1; /* 再描画時は等倍に戻す（実測座標がずれないように） */
+        var keepZoom = rmZoom; /* 実測のため一時的に等倍へ落とすが、描き終わったら元の倍率に戻す（接続を切ってもズームを維持） */
+        canvas.style.transform = ""; rmZoom = 1;
         canvas.innerHTML = nodes + '<svg class="link-layer" id="linkLayer" width="' + W + '" height="400" aria-hidden="true"><path id="dragPath" fill="none" stroke-width="3" stroke-dasharray="6 4" style="display:none"/><circle id="dragStart" r="4" style="display:none"/><circle id="dragDot" r="4.5" style="display:none"/><path id="dragHead" style="display:none"/></svg>';
-        /* 実測：列ごとに実際の高さで積み上げ、カード間に必ず GAP_Y の隙間を作る */
-        var pos = {}, maxBottom = 0;
+        /* 実測して配置する。保存済みの位置があるカードはその場所のまま（接続の付け外しで動かさない）。
+           保存位置が無いカードだけ、深さの列に「置き済みの範囲と重ならない」よう積み上げ、
+           その位置を保存する。カード間に必ず GAP_Y の隙間を作る */
+        var pos = {}, maxBottom = 0, placed = [], newPos = null, unmeasurable = false;
+        pieces.forEach(function (p) {
+          var sp = savedPos[p.id]; if (!sp) return;
+          var el = nodeEl(p.id); if (!el) return;
+          var h = el.offsetHeight;
+          pos[p.id] = { x: sp.x, y: sp.y, h: h };
+          el.style.top = sp.y + "px";
+          placed.push({ x: sp.x, y: sp.y, b: sp.y + h });
+          maxBottom = Math.max(maxBottom, sp.y + h);
+        });
         depthKeys.forEach(function (d) {
-          var cursor = PAD;
+          var colX = PAD + d * (NODE_W + GAP_X);
+          var ivs = placed.filter(function (r) { return r.x === colX; }).sort(function (a, b) { return a.y - b.y; });
           byDepth[d].forEach(function (p) {
+            if (pos[p.id]) return;
             var el = nodeEl(p.id); if (!el) return;
             var h = el.offsetHeight;
-            pos[p.id] = { x: PAD + d * (NODE_W + GAP_X), y: cursor, h: h };
-            el.style.top = cursor + "px";
-            cursor += h + GAP_Y;
+            if (h === 0) unmeasurable = true; /* ロードマップが隠れている間は実測できないので、その配置は保存しない */
+            var y = PAD, moved = true, guard = 0;
+            while (moved && guard++ < 60) {
+              moved = false;
+              for (var i = 0; i < ivs.length; i++) {
+                if (y < ivs[i].b + GAP_Y && y + h > ivs[i].y - GAP_Y) { y = ivs[i].b + GAP_Y; moved = true; }
+              }
+            }
+            pos[p.id] = { x: colX, y: y, h: h };
+            el.style.top = y + "px";
+            var rec = { x: colX, y: y, b: y + h };
+            ivs.push(rec); placed.push(rec);
+            maxBottom = Math.max(maxBottom, y + h);
+            if (!newPos) newPos = {};
+            newPos[p.id] = { x: colX, y: y };
           });
-          maxBottom = Math.max(maxBottom, cursor - GAP_Y);
         });
+        if (newPos && wsObj && !unmeasurable) {
+          wsObj.nodePos = Object.assign({}, savedPos, newPos);
+          saveState();
+        }
+        /* 保存位置が自動レイアウトより右／下にはみ出す場合はキャンバスを広げる */
+        pieces.forEach(function (p) { var pp = pos[p.id]; if (pp) W = Math.max(W, pp.x + NODE_W + PAD); });
+        canvas.style.width = W + "px";
         var H = maxBottom + PAD;
         canvas.style.height = H + "px";
         var linkSvg = document.getElementById("linkLayer");
@@ -2845,6 +2809,7 @@
         canvas.insertAdjacentHTML("afterbegin", '<svg width="' + W + '" height="' + H + '" aria-hidden="true">' + enclosures + paths + "</svg>");
         /* 全体図はこの実測レイアウトをそのまま縮小して描く */
         lastLayout = { W: W, H: H, pos: pos, outC: outC, inC: inC, pieces: pieces, wsSet: wsSet };
+        setRmZoom(keepZoom); /* 実測用に落とした倍率を元に戻す */
         renderOverview();
         applyRmMode();
       }
