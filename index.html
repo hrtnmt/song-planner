@@ -909,6 +909,113 @@
         .card { padding: 14px; gap: 8px; }
       }
     </style>
+
+    <style id="game-feel">
+      /* ===== ゲームっぽい操作感：項目を増やさず、既存の要素自体の振る舞いで出す ===== */
+
+      /* --- 押し込めるボタン：下側の影がアクティブで沈む --- */
+      .btn.primary { box-shadow: 0 3px 0 rgba(35, 32, 27, .38); }
+      .btn.primary:active { transform: translateY(2px) scale(.98); box-shadow: 0 1px 0 rgba(35, 32, 27, .38); }
+      .btn.fab { box-shadow: 0 4px 0 rgba(35, 32, 27, .38), 0 12px 26px rgba(35, 32, 27, .28); }
+      .btn.fab:active { transform: translateY(3px) scale(.97); box-shadow: 0 1px 0 rgba(35, 32, 27, .38), 0 6px 16px rgba(35, 32, 27, .24); }
+
+      /* --- 段階チップ自体が進捗ゲージ兼「次へ」ボタン ---
+         項目は増やさず、もともとある段階チップの中に段階色が満ちていく。
+         チップをタップすると次の段階へ進む（進むためのボタンは別に置かない） */
+      .chip { --fillc: var(--ink-faint); }
+      .chip.status-want { --fillc: var(--ink-faint); }
+      .chip.status-notstarted { --fillc: var(--ink-soft); }
+      .chip.status-reading, .chip.status-doing { --fillc: var(--gold); }
+      .chip.status-finishing { --fillc: var(--accent); }
+      .chip.status-done { --fillc: var(--ok); }
+      .chip.filled {
+        background-image: linear-gradient(90deg,
+          color-mix(in srgb, var(--fillc) 34%, transparent) 0,
+          color-mix(in srgb, var(--fillc) 34%, transparent) var(--fp, 0%),
+          transparent var(--fp, 0%));
+      }
+      button.chip {
+        -webkit-appearance: none; appearance: none;
+        border: 1px solid transparent; font-weight: 700;
+        transition: transform .14s var(--ease-out), background-color .18s ease, box-shadow .18s ease;
+      }
+      button.chip.status-notstarted { border-color: var(--ink-faint); }
+      button.chip::after { content: "›"; margin-left: 4px; font-weight: 700; opacity: .55; }
+      button.chip:active { transform: scale(.9); }
+      /* 段階が進んだ瞬間、チップがポップする */
+      .card.just-advanced .chip { animation: chipPop .45s var(--ease-spring); }
+      @keyframes chipPop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+      /* --- 全体の進み具合は、既存の「演奏済み」絞り込みチップの中に満ちる --- */
+      .stat-strip button[data-stat-filter="done"] {
+        background-image: linear-gradient(90deg,
+          color-mix(in srgb, var(--ok) 26%, transparent) 0,
+          color-mix(in srgb, var(--ok) 26%, transparent) var(--donep, 0%),
+          transparent var(--donep, 0%));
+      }
+
+      /* --- 今取り組める曲：新しいチップは足さず、カードの枠の光と段階チップの鼓動で示す --- */
+      .card.quest-ready { border-color: var(--ok); animation: questGlow 2.2s ease-in-out infinite; }
+      .card.quest-ready .chip { animation: chipPulse 1.8s ease-in-out infinite; }
+      @keyframes chipPulse { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--ok-soft); } }
+      .rnode.is-ready { animation: questGlow 2.2s ease-in-out infinite; }
+      @keyframes questGlow {
+        0%, 100% { box-shadow: var(--shadow); }
+        50% { box-shadow: 0 0 0 3px var(--ok-soft), var(--shadow); }
+      }
+
+      /* --- カードの登場：少しずつ遅れてせり上がる --- */
+      .card { animation: cardIn .3s var(--ease-out) backwards; animation-delay: var(--d, 0s); }
+      .card.quest-ready { animation: cardIn .3s var(--ease-out) backwards, questGlow 2.2s ease-in-out .4s infinite; animation-delay: var(--d, 0s), .4s; }
+      @keyframes cardIn { from { opacity: 0; transform: translateY(7px) scale(.99); } to { opacity: 1; transform: none; } }
+
+      /* --- 下部ナビ：選ばれたアイコンが跳ねる --- */
+      .tabs.bottom-nav button[aria-selected="true"] svg { animation: navPop .38s var(--ease-spring); }
+      @keyframes navPop { 0% { transform: scale(.65); } 60% { transform: scale(1.25); } 100% { transform: scale(1.08); } }
+
+      /* --- ロードマップ：接続中は他の点が光って誘う／持ち上げ感 --- */
+      .rnode { transition: border-color .18s ease, box-shadow .22s ease, transform .16s var(--ease-out); }
+      .rnode.dragging { transform: scale(1.045) rotate(-1deg); }
+      .roadmap-canvas.linking .rnode:not(.link-source) .port { animation: portPulse .9s ease-in-out infinite; }
+      @keyframes portPulse {
+        0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
+        50% { box-shadow: 0 0 0 8px var(--accent-soft); }
+      }
+
+      /* --- クリア演出：画面に何も足さず、その曲のカード自身にスタンプが落ちる --- */
+      .card { position: relative; }
+      .card.just-cleared, .rnode.just-cleared { animation: clearFlash 1.5s var(--ease-out); }
+      @keyframes clearFlash {
+        0% { box-shadow: var(--shadow); }
+        25% { box-shadow: 0 0 0 6px var(--ok-soft), var(--shadow); }
+        100% { box-shadow: var(--shadow); }
+      }
+      .card.just-cleared::after {
+        content: "★ CLEAR";
+        position: absolute; top: 12px; right: 12px; z-index: 3;
+        padding: 4px 10px; font-size: 12px; font-weight: 700; letter-spacing: .12em;
+        color: var(--ok); background: var(--surface);
+        border: 2px solid var(--ok); border-radius: 8px;
+        transform: rotate(-7deg); pointer-events: none;
+        animation: cardStamp 1.9s var(--ease-out) forwards;
+      }
+      @keyframes cardStamp {
+        0% { opacity: 0; transform: scale(2.1) rotate(-20deg); }
+        18% { opacity: 1; transform: scale(.94) rotate(-7deg); }
+        26% { transform: scale(1) rotate(-7deg); }
+        78% { opacity: 1; }
+        100% { opacity: 0; transform: scale(1) rotate(-7deg) translateY(-6px); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .card, .card.quest-ready, .card.quest-ready .chip, .rnode.is-ready,
+        .card.just-advanced .chip, .card.just-cleared, .rnode.just-cleared,
+        .tabs.bottom-nav button[aria-selected="true"] svg,
+        .roadmap-canvas.linking .rnode:not(.link-source) .port { animation: none; }
+        .card.just-cleared::after { display: none; }
+        .rnode.dragging { transform: none; }
+      }
+    </style>
   </head>
   <body>
     <div class="wrap">
@@ -1084,6 +1191,12 @@
             <option value="3">3日前から表示</option>
             <option value="1">前日から表示</option>
             <option value="0">当日のみ表示</option>
+          </select>
+        </label>
+        <label>効果音
+          <select id="soundSel" aria-label="効果音のオン・オフ">
+            <option value="on">オン</option>
+            <option value="off">オフ</option>
           </select>
         </label>
         <span style="flex:1"></span>
@@ -1429,7 +1542,7 @@
         if (!workspaces.some(function (w) { return w.id === activeWorkspaceId; })) activeWorkspaceId = workspaces[0].id;
         return {
           pieces: pieces,
-          settings: Object.assign({ notifyWithin: 7 }, (s && s.settings) || {}),
+          settings: Object.assign({ notifyWithin: 7, sound: true }, (s && s.settings) || {}),
           workspaces: workspaces,
           activeWorkspaceId: activeWorkspaceId
         };
@@ -1526,6 +1639,77 @@
         var t = $("#toast"); t.textContent = msg; t.classList.add("show");
         clearTimeout(toastTimer);
         toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+      }
+
+      /* ================= game feel: 効果音・振動・クリア演出 =================
+         効果音はWeb Audioでその場で合成する小さな音だけ（ファイル不要）。
+         AudioContextはユーザー操作の流れでのみ作る／再開する。 */
+      var audioCtx = null;
+      function sfxOn() { return !(state && state.settings && state.settings.sound === false); }
+      function tone(freq, delay, dur, type, vol, slideTo) {
+        if (!audioCtx) return;
+        var t0 = audioCtx.currentTime + (delay || 0);
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type || "triangle";
+        o.frequency.setValueAtTime(freq, t0);
+        if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(vol || 0.06, t0 + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t0); o.stop(t0 + dur + 0.05);
+      }
+      function playSfx(name, arg) {
+        if (!sfxOn()) return;
+        try {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          if (!audioCtx) audioCtx = new AC();
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          if (name === "tap") tone(620, 0, 0.07, "triangle", 0.05);
+          else if (name === "tab") { tone(500, 0, 0.06, "triangle", 0.045); tone(750, 0.05, 0.07, "triangle", 0.05); }
+          else if (name === "up") { tone(523, 0, 0.09, "triangle", 0.06); tone(659, 0.07, 0.09, "triangle", 0.06); tone(784, 0.14, 0.14, "triangle", 0.065); }
+          else if (name === "back") { tone(392, 0, 0.08, "triangle", 0.045); tone(330, 0.06, 0.1, "triangle", 0.04); }
+          else if (name === "connect") { tone(440, 0, 0.16, "sine", 0.07, 880); tone(880, 0.12, 0.1, "triangle", 0.05); }
+          else if (name === "star") { var f = 500 + (arg || 1) * 140; tone(f, 0, 0.1, "triangle", 0.06); tone(f * 1.5, 0.05, 0.09, "sine", 0.04); }
+          else if (name === "clear") {
+            [523, 659, 784, 1047].forEach(function (fq, i) { tone(fq, i * 0.09, 0.16, "triangle", 0.07); });
+            tone(1319, 0.38, 0.32, "triangle", 0.06);
+            tone(262, 0.38, 0.32, "sine", 0.05); tone(392, 0.38, 0.32, "sine", 0.04); tone(523, 0.38, 0.32, "sine", 0.04);
+          }
+        } catch (e) { /* 効果音が出なくても操作は続行する */ }
+      }
+      function buzz(pattern) { if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} } }
+      function reducedMotion() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+      /* クリア演出：画面に要素を足さず、その曲のカード／ノード自身が反応する */
+      function markPieceFx(id, cls, ms) {
+        var els = document.querySelectorAll('.card[data-id="' + id + '"], .rnode[data-node="' + id + '"]');
+        els.forEach(function (el) {
+          el.classList.remove(cls);
+          void el.offsetWidth;
+          el.classList.add(cls);
+          setTimeout(function () { el.classList.remove(cls); }, ms);
+        });
+      }
+      function celebrateClear(p) {
+        playSfx("clear");
+        buzz([35, 50, 35, 50, 110]);
+        if (reducedMotion()) return;
+        markPieceFx(p.id, "just-cleared", 2000);
+      }
+      /* 段階変更の共通フィードバック：進んだら上昇音、戻ったら下降音、
+         演奏済みに届いたらクリア演出。呼び出し側は保存と再描画を済ませてから呼ぶ */
+      function statusFeedback(p, oldStatus) {
+        if (!p || p.status === oldStatus) return;
+        if (p.status === "done") {
+          celebrateClear(p);
+          toast("「" + p.title + "」を演奏済みにしました");
+          return;
+        }
+        var oi = STATUS_KEYS.indexOf(oldStatus), ni = STATUS_KEYS.indexOf(p.status);
+        if (ni > oi) { playSfx("up"); buzz([16, 40, 16]); if (!reducedMotion()) markPieceFx(p.id, "just-advanced", 520); }
+        else if (ni < oi) { playSfx("back"); buzz(8); }
+        toast("「" + p.title + "」を「" + STATUS_LABEL[p.status] + "」にしました");
       }
       function todayStart() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
       function parseDate(s) { if (!s) return null; var d = new Date(s + "T00:00:00"); return isNaN(d.getTime()) ? null : d; }
@@ -1940,6 +2124,8 @@
       function syncNotifySelect() {
         var ns = document.getElementById("notifyWithin");
         if (ns) ns.value = String(state.settings.notifyWithin);
+        var ss = document.getElementById("soundSel");
+        if (ss) ss.value = state.settings.sound === false ? "off" : "on";
       }
       function switchToProfile(id) {
         var prof = profileById(id); if (!prof) return;
@@ -2131,6 +2317,17 @@
         for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= w ? "" : "off") + '">★</span>';
         return '<span class="stars" aria-label="弾きたい度 ' + w + '">' + s + "</span>";
       }
+      /* 段階チップ：新しい項目は足さず、チップ自体が進捗ゲージを兼ねる。
+         中に段階色が現在地の分だけ満ち、タップで次の段階へ進む */
+      function statusChipHtml(p) {
+        var idx = STATUS_KEYS.indexOf(p.status);
+        var fp = ((idx + 1) / STATUS_KEYS.length * 100) + "%";
+        var inner = (STATUS_ICON[p.status] || "") + STATUS_LABEL[p.status];
+        if (p.status === "done") {
+          return '<span class="chip filled status-done" style="--fp:' + fp + '">' + inner + "</span>";
+        }
+        return '<button type="button" class="chip filled status-' + p.status + '" style="--fp:' + fp + '" data-act="advance" aria-label="段階は' + STATUS_LABEL[p.status] + "。タップで次の段階へ進む" + '">' + inner + "</button>";
+      }
       function prereqNote(p) {
         var gs = cleanGroups(p);
         if (gs.length === 0) return "";
@@ -2140,7 +2337,8 @@
         var joiner = gs.length > 1 ? ' <b>または</b> ' : " ";
         return '<div class="prereq-note">前提：' + parts.join(joiner) + " を終えてから</div>";
       }
-      function cardHtml(p) {
+      function cardHtml(p, delay) {
+        var questReady = p.status !== "done" && (p.status === "want" || p.status === "notstarted") && cleanGroups(p).length > 0 && isReady(p);
         var evs = pieceEvents(p).filter(function (ev) { return daysLeft(ev.date) >= 0 || ev.kind !== "start"; });
         var nextEv = evs.filter(function (ev) { return daysLeft(ev.date) >= 0; })[0];
         var overdueEv = evs.filter(function (ev) { return daysLeft(ev.date) < 0 && p.status !== "done"; })[0];
@@ -2157,13 +2355,13 @@
         var ptinaMeta = [];
         if (p.ptinaStep) ptinaMeta.push("難易度 " + esc(p.ptinaStep));
         if (p.ptinaTime) ptinaMeta.push(esc(p.ptinaTime));
-        return '<article class="card st-' + p.status + '" data-id="' + p.id + '">' +
+        return '<article class="card st-' + p.status + (questReady ? " quest-ready" : "") + '" style="--d:' + (delay || 0) + 's" data-id="' + p.id + '">' +
           (p.composer ? '<div class="composer">' + esc(p.composer) + "</div>" : "") +
           "<h3>" + esc(p.title) + "</h3>" +
           '<div class="chips">' +
             (p.era ? '<span class="chip era">' + esc(p.era) + (p.year ? " ・ " + p.year + "年" : "") + "</span>" : (p.year ? '<span class="chip">' + p.year + "年</span>" : "")) +
             (p.genre ? '<span class="chip">' + esc(p.genre) + "</span>" : "") +
-            '<span class="chip status-' + p.status + '">' + (STATUS_ICON[p.status] || "") + STATUS_LABEL[p.status] + "</span>" +
+            statusChipHtml(p) +
           "</div>" +
           "<div>" + starsHtml(p.want) + "</div>" +
           (p.memo ? '<p class="memo">' + esc(p.memo) + "</p>" : "") +
@@ -2182,7 +2380,7 @@
       }
       function renderList() {
         var list = visiblePieces();
-        $("#cards").innerHTML = list.map(cardHtml).join("");
+        $("#cards").innerHTML = list.map(function (p, i) { return cardHtml(p, Math.min(i, 8) * 0.04); }).join("");
         $("#listEmpty").hidden = state.pieces.length !== 0;
         $("#noMatch").hidden = !(state.pieces.length > 0 && list.length === 0);
         $("#count").textContent = state.pieces.length === 0 ? "" :
@@ -2191,6 +2389,9 @@
         state.pieces.forEach(function (x) { if (stc[x.status] != null) stc[x.status]++; });
         var setTxt = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
         setTxt("statAll", state.pieces.length); setTxt("statWant", stc.want); setTxt("statNotstarted", stc.notstarted); setTxt("statReading", stc.reading); setTxt("statFinishing", stc.finishing); setTxt("statDone", stc.done);
+        /* 全体の進み具合は専用バーを置かず、既存の「演奏済み」チップの中に満ちる */
+        var strip = document.querySelector(".stat-strip");
+        if (strip) strip.style.setProperty("--donep", state.pieces.length ? Math.round(stc.done / state.pieces.length * 100) + "%" : "0%");
         var sfv = $("#fStatus").value;
         document.querySelectorAll("[data-stat-filter]").forEach(function (b) {
           b.setAttribute("aria-pressed", b.getAttribute("data-stat-filter") === sfv ? "true" : "false");
@@ -2579,7 +2780,7 @@
         if (createsCycle(toId, gs)) { toast("その向きにつなぐと循環してしまうため、接続できません"); return; }
         to.prereqGroups = gs;
         saveState(); renderAll();
-        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+        buzz([12, 30, 24]); playSfx("connect");
         toast("「" + from.title + "」→「" + to.title + "」をつなぎました");
       }
       function removeEdge(fromId, toId) {
@@ -2588,6 +2789,7 @@
           return g.filter(function (id) { return id !== fromId; });
         }).filter(function (g) { return g.length > 0; });
         saveState(); renderAll();
+        playSfx("back");
         toast("「" + (from ? from.title : "") + "」→「" + to.title + "」の接続を外しました");
       }
       function andMergePieces(dragId, targetId) {
@@ -2619,6 +2821,7 @@
         });
         if (changed > 0) {
           saveState(); renderAll();
+          buzz([12, 30, 24]); playSfx("connect");
           toast("「" + drag.title + "」と「" + target.title + "」をANDグループにまとめました");
         } else {
           renderRoadmap();
@@ -2850,8 +3053,10 @@
           concerts: concerts,
           prereqGroups: groups
         };
+        var prevStatus = null, editedPiece = null;
         if (editingId) {
           var p = byId(editingId);
+          prevStatus = p.status; editedPiece = p;
           Object.keys(data).forEach(function (k) { p[k] = data[k]; });
           toast("保存しました");
         } else {
@@ -2860,6 +3065,7 @@
           toast("「" + title + "」を追加しました");
         }
         saveState(); closeEditor(); renderAll();
+        if (editedPiece && prevStatus !== null && editedPiece.status !== prevStatus) statusFeedback(editedPiece, prevStatus);
       }
 
       /* ================= delete confirm ================= */
@@ -2987,7 +3193,7 @@
 
       document.querySelectorAll(".tabs button").forEach(function (b) {
         b.addEventListener("click", function () {
-          if (curView !== b.dataset.view && navigator.vibrate) { try { navigator.vibrate(6); } catch (e) {} }
+          if (curView !== b.dataset.view) { buzz(6); playSfx("tab"); }
           curView = b.dataset.view;
           document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
           $("#view-list").hidden = curView !== "list";
@@ -3068,7 +3274,7 @@
       $("#rmFit").addEventListener("click", function () { fitRoadmap(); });
       $("#overviewSvgWrap").addEventListener("click", function (ev) {
         var g = ev.target.closest ? ev.target.closest("[data-ov]") : null;
-        if (g) openPieceDetail(g.getAttribute("data-ov"));
+        if (g) { playSfx("tap"); openPieceDetail(g.getAttribute("data-ov")); }
       });
       $("#overviewSvgWrap").addEventListener("keydown", function (ev) {
         if (ev.key !== "Enter" && ev.key !== " ") return;
@@ -3083,15 +3289,28 @@
       });
       $("#pieceStatusSel").addEventListener("change", function (ev) {
         var p = byId(detailId); if (!p) return;
+        var oldStatus = p.status;
         p.status = ev.target.value;
         saveState(); renderAll(); renderPieceDetail();
-        toast("「" + p.title + "」を「" + STATUS_LABEL[p.status] + "」にしました");
+        statusFeedback(p, oldStatus);
       });
 
       $("#cards").addEventListener("click", function (ev) {
         if (handleIcsClick(ev)) return;
         var card = ev.target.closest(".card"); if (!card) return;
         if (ev.target.closest("[data-act='edit']")) { openEditor(card.dataset.id); return; }
+        var advBtn = ev.target.closest("[data-act='advance']");
+        if (advBtn) {
+          var ap = byId(card.dataset.id); if (!ap) return;
+          var ai = STATUS_KEYS.indexOf(ap.status);
+          if (ai >= 0 && ai < STATUS_KEYS.length - 1) {
+            var aOld = ap.status;
+            ap.status = STATUS_KEYS[ai + 1];
+            saveState(); renderAll();
+            statusFeedback(ap, aOld);
+          }
+          return;
+        }
         if (ev.target.closest("select, a, button")) return; /* ステータス変更・リンク・ボタンはそのまま */
         openEditor(card.dataset.id); /* カードのタップで編集（アプリらしく） */
       });
@@ -3105,8 +3324,9 @@
         var sel = ev.target.closest("[data-act='status']"); if (!sel) return;
         var card = ev.target.closest(".card");
         var p = byId(card.dataset.id); if (!p) return;
+        var oldStatus = p.status;
         p.status = sel.value; saveState(); renderAll();
-        toast("「" + p.title + "」を「" + STATUS_LABEL[p.status] + "」にしました");
+        statusFeedback(p, oldStatus);
       });
       $("#roadmapCanvas").addEventListener("pointerdown", function (ev) {
         var port = ev.target.closest ? ev.target.closest("[data-port]") : null;
@@ -3126,6 +3346,7 @@
           var startPt = canvasPoint(ev);
           drawLinkLine(dragState.ax, dragState.ay, startPt.x, startPt.y, false, dragState.dir);
           var src = nodeEl(dragState.fromId); if (src) src.classList.add("link-source");
+          var cvLink = $("#roadmapCanvas"); if (cvLink) cvLink.classList.add("linking");
           return;
         }
         var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
@@ -3180,6 +3401,7 @@
       window.addEventListener("pointerup", function (ev) {
         if (!dragState) return;
         var ds = dragState; dragState = null;
+        var cvUp = $("#roadmapCanvas"); if (cvUp) cvUp.classList.remove("linking");
         lastDragEnd = Date.now(); lastDragMoved = ds.moved;
         clearLinkLine(); clearDropMarks();
         if (!ds.moved) { resetDragEl(ds); return; }
@@ -3199,6 +3421,7 @@
         if (!dragState) return;
         resetDragEl(dragState);
         dragState = null;
+        var cvCancel = $("#roadmapCanvas"); if (cvCancel) cvCancel.classList.remove("linking");
         clearLinkLine(); clearDropMarks();
       });
       $("#roadmapCanvas").addEventListener("click", function (ev) {
@@ -3217,6 +3440,7 @@
       $("#starRow").addEventListener("click", function (ev) {
         var b = ev.target.closest("[data-star]"); if (!b) return;
         editWant = parseInt(b.dataset.star, 10); setStars();
+        playSfx("star", editWant); buzz(8);
       });
       $("#guessEraBtn").addEventListener("click", function () {
         var era = guessEra($("#fComposer").value, $("#fYear").value);
@@ -3344,6 +3568,15 @@
         state.settings.notifyWithin = parseInt(notifySel.value, 10);
         saveState(); renderAlerts();
       });
+      var soundSel = $("#soundSel");
+      if (soundSel) {
+        soundSel.value = state.settings.sound === false ? "off" : "on";
+        soundSel.addEventListener("change", function () {
+          state.settings.sound = soundSel.value !== "off";
+          saveState();
+          if (state.settings.sound) playSfx("up");
+        });
+      }
       $("#exportBtn").addEventListener("click", function () {
         var prof = activeProfile();
         var blob = new Blob([JSON.stringify({ app: "song-planner-pages", version: 2, profileName: prof ? prof.name : "", pieces: state.pieces, settings: state.settings, workspaces: state.workspaces, activeWorkspaceId: state.activeWorkspaceId }, null, 2)], { type: "application/json" });
@@ -3381,6 +3614,7 @@
             state.activeWorkspaceId = nd.activeWorkspaceId;
             syncWorkspacePieceIds();
             notifySel.value = String(state.settings.notifyWithin);
+            if (soundSel) soundSel.value = state.settings.sound === false ? "off" : "on";
             saveState(); renderAll();
             toast(pieces.length + "曲を読み込みました（このプロフィールの既存データと置き換え）");
           } catch (e) { toast("読み込めませんでした：JSONの形式が違うようです"); }
