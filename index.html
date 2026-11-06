@@ -1,0 +1,1259 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>演奏したい曲リスト Pages版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --surface: #fffdf9;
+        --surface-2: #efeadf;
+        --ink: #23201b;
+        --ink-soft: #5c564c;
+        --ink-faint: #8a8378;
+        --line: #ddd5c6;
+        --accent: #7c2d3e;
+        --accent-soft: #f3e3e6;
+        --gold: #a97b12;
+        --gold-soft: #f7ecd2;
+        --ok: #33691e;
+        --ok-soft: #e6efdc;
+        --warn: #9c4a08;
+        --warn-soft: #faecd9;
+        --danger: #b3261e;
+        --danger-soft: #f9e3e1;
+        --shadow: 0 1px 2px rgba(35, 32, 27, .06), 0 4px 14px rgba(35, 32, 27, .05);
+        --radius: 10px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16181d;
+          --surface: #1f222a;
+          --surface-2: #262a33;
+          --ink: #ece7db;
+          --ink-soft: #b3ab9c;
+          --ink-faint: #7e7769;
+          --line: #3a3f4a;
+          --accent: #e2a0ae;
+          --accent-soft: #3d2730;
+          --gold: #dcb254;
+          --gold-soft: #3a3220;
+          --ok: #a5cf8f;
+          --ok-soft: #26331f;
+          --warn: #eda75e;
+          --warn-soft: #3a2c1a;
+          --danger: #f0928a;
+          --danger-soft: #3d2321;
+          --shadow: 0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.3);
+        }
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      button, input, select, textarea { font: inherit; color: inherit; }
+      button { cursor: pointer; }
+      a { color: var(--accent); }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 18px 16px 64px; }
+
+      /* ---------- alert banner ---------- */
+      .alert {
+        border: 1px solid var(--warn);
+        background: var(--warn-soft);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        margin-bottom: 16px;
+      }
+      .alert.overdue { border-color: var(--danger); background: var(--danger-soft); }
+      .alert h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 700;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .alert ul { margin: 0; padding-left: 18px; }
+      .alert li { margin: 2px 0; }
+      .alert .days { font-weight: 700; white-space: nowrap; }
+
+      /* ---------- toolbar / tabs ---------- */
+      .topbar {
+        display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+        justify-content: space-between; margin-bottom: 14px;
+      }
+      .tabs { display: inline-flex; background: var(--surface-2); border-radius: 999px; padding: 3px; gap: 2px; }
+      .tabs button {
+        border: 0; background: transparent; padding: 7px 16px; border-radius: 999px;
+        font-weight: 500; color: var(--ink-soft);
+      }
+      .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 700; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        border: 1px solid var(--line); background: var(--surface);
+        border-radius: 8px; padding: 8px 14px; font-weight: 500;
+      }
+      .btn:hover { border-color: var(--ink-faint); }
+      .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+      @media (prefers-color-scheme: dark) { .btn.primary { color: #1d1216; } }
+      .btn.primary:hover { filter: brightness(1.08); }
+      .btn.small { padding: 5px 10px; font-size: 13px; border-radius: 7px; }
+      .btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+      .btn svg { width: 16px; height: 16px; flex: none; }
+
+      /* ---------- filter bar ---------- */
+      .filters {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px;
+      }
+      .searchbox { position: relative; flex: 1 1 200px; min-width: 160px; }
+      .searchbox svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--ink-faint); }
+      .searchbox input { width: 100%; padding: 8px 10px 8px 32px; }
+      input[type="text"], input[type="url"], input[type="number"], input[type="date"], select, textarea {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+      }
+      input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+      .filters select { max-width: 100%; }
+      .count { color: var(--ink-soft); font-size: 13px; margin: 8px 2px 12px; }
+
+      /* ---------- cards ---------- */
+      .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+      .card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+      }
+      .card .composer { color: var(--ink-soft); font-size: 13px; }
+      .card h3 {
+        margin: 0; font-family: "Shippori Mincho B1", serif; font-weight: 700;
+        font-size: 18px; line-height: 1.4;
+      }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .chip {
+        font-size: 12px; padding: 2px 9px; border-radius: 999px;
+        background: var(--surface-2); color: var(--ink-soft); white-space: nowrap;
+      }
+      .chip.era { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+      .chip.status-want { background: var(--surface-2); }
+      .chip.status-doing { background: var(--warn-soft); color: var(--warn); font-weight: 700; }
+      .chip.status-done { background: var(--ok-soft); color: var(--ok); font-weight: 700; }
+      .stars { color: var(--gold); letter-spacing: 2px; font-size: 14px; }
+      .stars .off { color: var(--line); }
+      .card .memo { color: var(--ink-soft); font-size: 13.5px; white-space: pre-wrap; margin: 0; }
+      .card .dates { font-size: 13px; color: var(--ink-soft); display: grid; gap: 6px; }
+      .card .dates b { color: var(--ink); font-weight: 700; }
+      .ev-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+      .ev-row .ev-label { flex: 1 1 180px; min-width: 0; }
+      .cal-actions { display: inline-flex; gap: 4px; flex: none; }
+      .cal-btn {
+        display: inline-flex; align-items: center; gap: 4px;
+        border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+        border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 700;
+        text-decoration: none; line-height: 1.5; white-space: nowrap;
+      }
+      .cal-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .cal-btn svg { width: 12px; height: 12px; flex: none; }
+      .cal-guide {
+        border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 14px 16px; margin-top: 22px;
+      }
+      .cal-guide h2 { font-family: "Shippori Mincho B1", serif; font-size: 16px; margin: 0 0 6px; }
+      .cal-guide p, .cal-guide li { font-size: 13.5px; color: var(--ink-soft); }
+      .cal-guide p { margin: 0 0 6px; }
+      .cal-guide ol { margin: 6px 0 0; padding-left: 20px; }
+      .cal-guide li { margin: 3px 0; }
+      .cal-guide b { color: var(--ink); }
+      .sched-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 4px; }
+      .sched-toolbar .note { font-size: 12.5px; color: var(--ink-faint); }
+      .days-badge { font-weight: 700; color: var(--warn); }
+      .days-badge.overdue, .days-badge.today { color: var(--danger); }
+      .card .prereq-note { font-size: 13px; color: var(--ink-soft); border-top: 1px dashed var(--line); padding-top: 8px; }
+      .card .prereq-note b { color: var(--ink); }
+      .card .foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border-top: 1px solid var(--line); padding-top: 10px; }
+      .card .foot .spacer { flex: 1; }
+      .iconbtn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+        border: 1px solid var(--line); background: transparent; border-radius: 7px;
+        padding: 5px 9px; font-size: 13px; color: var(--ink-soft); text-decoration: none;
+      }
+      .iconbtn:hover { color: var(--ink); border-color: var(--ink-faint); }
+      .iconbtn svg { width: 15px; height: 15px; }
+      select.status-select { padding: 4px 6px; font-size: 13px; border-radius: 7px; }
+
+      .empty {
+        border: 1.5px dashed var(--line); border-radius: var(--radius);
+        padding: 42px 20px; text-align: center; color: var(--ink-soft);
+      }
+      .empty .big { font-family: "Shippori Mincho B1", serif; font-size: 19px; color: var(--ink); margin: 0 0 6px; }
+      .empty p { margin: 4px 0 14px; }
+
+      /* ---------- roadmap ---------- */
+      .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; align-items: center; }
+      .legend .swatch { display: inline-block; width: 26px; height: 0; border-top: 3px solid var(--ink-soft); vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+      .legend .swatch.gold { border-top-color: var(--gold); }
+      .roadmap-frame {
+        border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+        overflow: auto; box-shadow: var(--shadow);
+      }
+      .roadmap-canvas { position: relative; }
+      .roadmap-canvas svg { position: absolute; left: 0; top: 0; pointer-events: none; }
+      .rnode {
+        position: absolute; width: 208px; text-align: left;
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: 9px;
+        padding: 9px 11px; box-shadow: var(--shadow);
+      }
+      .rnode:hover { border-color: var(--ink-faint); }
+      .rnode .step { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--ink-faint); }
+      .rnode .t { font-family: "Shippori Mincho B1", serif; font-weight: 700; font-size: 14.5px; line-height: 1.35; margin: 1px 0; }
+      .rnode .c { font-size: 12px; color: var(--ink-soft); }
+      .rnode .badge { display: inline-block; margin-top: 5px; font-size: 11.5px; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
+      .rnode .badge.ready { background: var(--ok-soft); color: var(--ok); }
+      .rnode .badge.wait { background: var(--surface-2); color: var(--ink-soft); }
+      .rnode .badge.done { background: var(--ok); color: #fff; }
+      @media (prefers-color-scheme: dark) { .rnode .badge.done { color: #14210d; } }
+      .rnode.is-done { opacity: .78; }
+      .rnode.is-ready { border-color: var(--ok); }
+
+      /* ---------- schedule ---------- */
+      .sched { display: grid; gap: 8px; }
+      .sched-row {
+        display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 10px 14px; box-shadow: var(--shadow);
+      }
+      .sched-row .date { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .sched-row .kind { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+      .kind.start { background: var(--ok-soft); color: var(--ok); }
+      .kind.deadline { background: var(--warn-soft); color: var(--warn); }
+      .kind.concert { background: var(--accent-soft); color: var(--accent); }
+      .sched-row .what { flex: 1 1 220px; }
+      .sched-row .what .title { font-family: "Shippori Mincho B1", serif; font-weight: 700; }
+      .sched-row.past { opacity: .55; }
+      h2.section { font-family: "Shippori Mincho B1", serif; font-size: 19px; margin: 22px 0 10px; }
+
+      /* ---------- data / settings ---------- */
+      .settings {
+        margin-top: 34px; border-top: 1px solid var(--line); padding-top: 16px;
+        display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      }
+      .settings .note { flex-basis: 100%; color: var(--ink-faint); font-size: 12.5px; margin: 0; }
+      .settings label { font-size: 13.5px; color: var(--ink-soft); display: inline-flex; gap: 6px; align-items: center; }
+
+      /* ---------- dialog / form ---------- */
+      dialog {
+        border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink);
+        width: min(680px, calc(100vw - 24px)); max-height: calc(100dvh - 32px);
+        padding: 0; box-shadow: 0 18px 50px rgba(0,0,0,.28);
+      }
+      dialog::backdrop { background: rgba(20, 16, 10, .45); }
+      .dlg-body { padding: 20px 20px 8px; overflow-y: auto; max-height: calc(100dvh - 130px); }
+      .dlg-body h2 { font-family: "Shippori Mincho B1", serif; font-size: 20px; margin: 0 0 14px; }
+      .dlg-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding: 12px 20px 18px; border-top: 1px solid var(--line); }
+      .dlg-foot .spacer { flex: 1; }
+      fieldset { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px 14px; margin: 0 0 14px; }
+      legend { font-size: 13px; font-weight: 700; color: var(--ink-soft); padding: 0 6px; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+      @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+      .field { display: grid; gap: 4px; }
+      .field.full { grid-column: 1 / -1; }
+      .field label { font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+      .field label .req { color: var(--danger); }
+      .field input, .field select, .field textarea { width: 100%; }
+      textarea { min-height: 64px; resize: vertical; }
+      .inline-row { display: flex; gap: 8px; align-items: end; }
+      .inline-row .grow { flex: 1; }
+      .starbtn { background: none; border: 0; font-size: 24px; line-height: 1; padding: 2px; color: var(--line); }
+      .starbtn.on { color: var(--gold); }
+      .concert-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+      .concert-row input[type="text"] { flex: 1 1 180px; }
+      .group-box { border: 1px dashed var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+      .group-box .ghead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+      .pickchips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .pickchip {
+        border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+        padding: 4px 11px; font-size: 13px;
+      }
+      .pickchip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+      @media (prefers-color-scheme: dark) { .pickchip[aria-pressed="true"] { color: #1d1216; } }
+      .hint { font-size: 12.5px; color: var(--ink-faint); margin: 6px 0 0; }
+      .form-error { color: var(--danger); font-size: 13.5px; font-weight: 700; margin: 0 0 10px; display: none; }
+      .toast {
+        position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px);
+        background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+        font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: .25s; z-index: 50;
+        max-width: calc(100vw - 32px); text-align: center;
+      }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="alertArea"></div>
+
+      <div class="topbar">
+        <div class="tabs" role="tablist" aria-label="表示切替">
+          <button type="button" role="tab" data-view="list" aria-selected="true">曲一覧</button>
+          <button type="button" role="tab" data-view="roadmap" aria-selected="false">ロードマップ</button>
+          <button type="button" role="tab" data-view="schedule" aria-selected="false">予定</button>
+        </div>
+        <button type="button" class="btn primary" id="addBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          曲を追加
+        </button>
+      </div>
+
+      <!-- ===== list view ===== -->
+      <section id="view-list">
+        <div class="filters">
+          <div class="searchbox">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+            <input type="text" id="q" placeholder="曲名・作曲者・メモで検索" aria-label="検索" />
+          </div>
+          <select id="fGenre" aria-label="ジャンルで絞り込み"></select>
+          <select id="fEra" aria-label="時代で絞り込み"></select>
+          <select id="fStatus" aria-label="ステータスで絞り込み">
+            <option value="">ステータス：すべて</option>
+            <option value="want">いつか演奏したい</option>
+            <option value="doing">練習中</option>
+            <option value="done">演奏済み</option>
+          </select>
+          <select id="sort" aria-label="並び替え">
+            <option value="composer">作曲者順</option>
+            <option value="era">時代順</option>
+            <option value="year">作曲年順</option>
+            <option value="want">弾きたい度順</option>
+            <option value="new">新しい順</option>
+            <option value="old">古い順</option>
+            <option value="title">曲名順</option>
+          </select>
+        </div>
+        <p class="count" id="count"></p>
+        <div class="cards" id="cards"></div>
+        <div class="empty" id="listEmpty" hidden>
+          <p class="big">まだ曲が登録されていません</p>
+          <p>「曲を追加」から、弾いてみたい曲を1曲目に登録してみてください。<br />前提の曲をつなぐと、ロードマップに流れ図として表示されます。</p>
+          <button type="button" class="btn primary" id="emptyAddBtn">最初の曲を追加</button>
+        </div>
+        <div class="empty" id="noMatch" hidden>
+          <p class="big">条件に合う曲がありません</p>
+          <p>検索や絞り込みの条件を変えてみてください。</p>
+        </div>
+      </section>
+
+      <!-- ===== roadmap view ===== -->
+      <section id="view-roadmap" hidden>
+        <div class="legend">
+          <span><span class="swatch"></span>前提（AND：そのグループの曲を全部終えてから）</span>
+          <span><span class="swatch gold"></span>候補（OR：どれか1グループを満たせば進める）</span>
+          <span>ノードを押すと編集できます</span>
+        </div>
+        <div class="roadmap-frame" id="roadmapFrame">
+          <div class="roadmap-canvas" id="roadmapCanvas"></div>
+        </div>
+        <div class="empty" id="roadmapEmpty" hidden>
+          <p class="big">つながっている曲がまだありません</p>
+          <p>曲の編集画面で「ロードマップの前提」に曲を登録すると、<br />ここに「この曲をやってから次へ」の流れ図が描かれます。</p>
+        </div>
+      </section>
+
+      <!-- ===== schedule view ===== -->
+      <section id="view-schedule" hidden>
+        <div class="sched-toolbar">
+          <button type="button" class="btn small" id="exportAllIcsBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5m0 0l-2-2m2 2l2-2"/></svg>
+            全予定を .ics で書き出し
+          </button>
+          <span class="note">書き出したファイルをGoogleカレンダー（設定 → インポート）に読み込むと、まとめて登録できます。各予定には7日前・3日前・前日のアラームが入ります。</span>
+        </div>
+        <div id="schedArea"></div>
+        <div class="empty" id="schedEmpty" hidden>
+          <p class="big">日程が登録された曲はまだありません</p>
+          <p>曲の編集画面で、譜読み開始日・仕上げ期限・本番を登録すると、ここに時系列で並びます。</p>
+        </div>
+      </section>
+
+      <!-- ===== settings / data ===== -->
+      <div class="settings">
+        <label>期日アラート
+          <select id="notifyWithin" aria-label="期日アラートを表示する範囲">
+            <option value="7">1週間前から表示</option>
+            <option value="3">3日前から表示</option>
+            <option value="1">前日から表示</option>
+            <option value="0">当日のみ表示</option>
+          </select>
+        </label>
+        <span style="flex:1"></span>
+        <button type="button" class="btn small" id="exportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          JSONを書き出し
+        </button>
+        <button type="button" class="btn small" id="importBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 15V3m0 0L8 7m4-4l4 4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          JSONを読み込み
+        </button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <p class="note">データはこのブラウザ内に保存されます。別の端末へ移すときやバックアップには「JSONを書き出し」を使ってください。期日アラートはこのページを開いたときに上部へ表示されます。</p>
+      </div>
+
+      <div class="cal-guide" aria-label="カレンダー通知の使い方">
+        <h2>通知はカレンダー追加ボタンから</h2>
+        <p>このPages版にはサーバーがないため、通知はお使いのカレンダーが担当します。日付を登録した曲は、カードと「予定」タブの各日程にボタンが付きます。</p>
+        <ol>
+          <li><b>Googleカレンダー</b>ボタン：曲名と日付が入った予定作成画面が開きます。保存前に、予定の通知を<b>「メール 1週間前」</b>（必要なら3日前・前日も追加）に設定すると、そのタイミングでGmailに通知メールが届き、スマホにも表示されます。</li>
+          <li><b>.ics</b>ボタン：予定ファイルをダウンロードします。GoogleカレンダーやAppleカレンダーにインポートすると、<b>7日前・3日前・前日</b>のアラーム付きで登録されます。</li>
+          <li>日付を変更したら、古い予定をカレンダー側で削除して、もう一度ボタンから登録し直してください（自動では同期されません）。</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ===== editor dialog ===== -->
+    <dialog id="editor">
+      <form method="dialog" id="editForm" novalidate>
+        <div class="dlg-body">
+          <h2 id="dlgTitle">曲を追加</h2>
+          <p class="form-error" id="formError"></p>
+
+          <fieldset>
+            <legend>曲の情報</legend>
+            <div class="grid2">
+              <div class="field full">
+                <label for="fTitle">曲名 <span class="req">*必須</span></label>
+                <input type="text" id="fTitle" placeholder="例：ソナタ ロ短調 K.27" />
+              </div>
+              <div class="field">
+                <label for="fComposer">作曲者</label>
+                <div class="inline-row">
+                  <div class="grow"><input type="text" id="fComposer" placeholder="例：D. スカルラッティ" /></div>
+                  <button type="button" class="btn small" id="guessEraBtn">時代を推定</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="eEra">時代</label>
+                <select id="eEra"></select>
+              </div>
+              <div class="field">
+                <label for="fYear">作曲年（西暦）</label>
+                <input type="number" id="fYear" min="0" max="2100" placeholder="例：1740" />
+              </div>
+              <div class="field">
+                <label for="eGenre">ジャンル / 編成</label>
+                <select id="eGenre"></select>
+              </div>
+              <div class="field">
+                <label for="eStatus">ステータス</label>
+                <select id="eStatus">
+                  <option value="want">いつか演奏したい</option>
+                  <option value="doing">練習中</option>
+                  <option value="done">演奏済み</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>弾きたい度</label>
+                <div id="starRow" role="radiogroup" aria-label="弾きたい度">
+                  <button type="button" class="starbtn" data-star="1" aria-label="星1">★</button>
+                  <button type="button" class="starbtn" data-star="2" aria-label="星2">★</button>
+                  <button type="button" class="starbtn" data-star="3" aria-label="星3">★</button>
+                </div>
+              </div>
+              <div class="field full">
+                <label for="fMemo">メモ</label>
+                <textarea id="fMemo" placeholder="弾きたい理由、参考音源、注意点など"></textarea>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>ピティナ・ピアノ曲事典</legend>
+            <div class="grid2">
+              <div class="field">
+                <label for="fPtinaStep">難易度（ステップ）</label>
+                <input type="text" id="fPtinaStep" placeholder="例：発展3" />
+              </div>
+              <div class="field">
+                <label for="fPtinaTime">演奏時間</label>
+                <input type="text" id="fPtinaTime" placeholder="例：4分30秒" />
+              </div>
+              <div class="field full">
+                <label for="fPtinaUrl">ピティナの曲ページURL</label>
+                <input type="url" id="fPtinaUrl" placeholder="https://enc.piano.or.jp/musics/…" />
+              </div>
+            </div>
+            <p class="hint">曲事典に公開APIがないため、公式のキーワード検索へ飛んで調べ、見つけた難易度・演奏時間・URLをここに記録する形にしています。</p>
+            <p style="margin:8px 0 0"><button type="button" class="btn small" id="ptinaSearchBtn">この曲をピティナで検索</button></p>
+          </fieldset>
+
+          <fieldset>
+            <legend>日程</legend>
+            <div class="grid2">
+              <div class="field">
+                <label for="fStart">譜読み開始日</label>
+                <input type="date" id="fStart" />
+              </div>
+              <div class="field">
+                <label for="fDeadline">仕上げ期限</label>
+                <input type="date" id="fDeadline" />
+              </div>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label>本番</label>
+              <div id="concertRows"></div>
+              <div><button type="button" class="btn small" id="addConcertBtn">＋ 本番を追加</button></div>
+            </div>
+            <p class="hint">保存すると、曲カードと「予定」タブの各日程に「Googleカレンダー」「.ics」ボタンが付きます。そちらからカレンダーに登録してください（Googleカレンダーでは保存時に通知を「メール 1週間前」などに設定するとGmailに届きます）。</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>ロードマップの前提（この曲の前にやる曲）</legend>
+            <div id="groupArea"></div>
+            <button type="button" class="btn small" id="addGroupBtn">＋ 前提グループを追加</button>
+            <p class="hint">同じグループに入れた曲は「全部終えてから次へ（AND）」。グループを分けると「どれか1グループを満たせば次へ進める（OR）」になります。循環するつながりは保存時に自動で弾かれます。</p>
+          </fieldset>
+        </div>
+        <div class="dlg-foot">
+          <button type="button" class="btn danger" id="deleteBtn" hidden>この曲を削除</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn" id="cancelBtn">キャンセル</button>
+          <button type="submit" class="btn primary" id="saveBtn">保存する</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirmDlg">
+      <div class="dlg-body">
+        <h2 style="font-size:17px">削除しますか？</h2>
+        <p id="confirmText" style="margin:0 0 6px"></p>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn" id="confirmNo">やめる</button>
+        <button type="button" class="btn danger" id="confirmYes">削除する</button>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <script>
+      "use strict";
+      /* ================= constants ================= */
+      var LS_KEY = "song-planner-pages:v1";
+      var ERAS = ["バロック", "古典派", "ロマン派", "近現代", "その他"];
+      var ERA_ORDER = { "バロック": 0, "古典派": 1, "ロマン派": 2, "近現代": 3, "その他": 4, "": 5 };
+      var GENRES = ["ピアノ", "吹奏楽", "室内楽", "管弦楽", "合唱", "その他"];
+      var STATUS_LABEL = { want: "いつか演奏したい", doing: "練習中", done: "演奏済み" };
+      var PTINA_SEARCH = "https://enc.piano.or.jp/search?key=";
+
+      var COMPOSER_ERA = [
+        ["バッハ", "バロック"], ["bach", "バロック"], ["ヘンデル", "バロック"], ["ヴィヴァルディ", "バロック"],
+        ["スカルラッティ", "バロック"], ["scarlatti", "バロック"], ["テレマン", "バロック"], ["ラモー", "バロック"],
+        ["クープラン", "バロック"], ["パーセル", "バロック"],
+        ["ハイドン", "古典派"], ["haydn", "古典派"], ["モーツァルト", "古典派"], ["mozart", "古典派"],
+        ["クレメンティ", "古典派"], ["ベートーヴェン", "古典派"], ["beethoven", "古典派"],
+        ["シューベルト", "ロマン派"], ["schubert", "ロマン派"], ["ショパン", "ロマン派"], ["chopin", "ロマン派"],
+        ["シューマン", "ロマン派"], ["schumann", "ロマン派"], ["リスト", "ロマン派"], ["liszt", "ロマン派"],
+        ["ブラームス", "ロマン派"], ["brahms", "ロマン派"], ["メンデルスゾーン", "ロマン派"],
+        ["チャイコフスキー", "ロマン派"], ["グリーグ", "ロマン派"], ["ドヴォルザーク", "ロマン派"],
+        ["ラフマニノフ", "ロマン派"], ["rachmaninoff", "ロマン派"], ["サン＝サーンス", "ロマン派"],
+        ["フォーレ", "近現代"], ["ドビュッシー", "近現代"], ["debussy", "近現代"], ["ラヴェル", "近現代"],
+        ["ravel", "近現代"], ["スクリャービン", "近現代"], ["scriabin", "近現代"],
+        ["プロコフィエフ", "近現代"], ["prokofiev", "近現代"], ["ショスタコーヴィチ", "近現代"],
+        ["ヒンデミット", "近現代"], ["hindemith", "近現代"], ["バルトーク", "近現代"],
+        ["ストラヴィンスキー", "近現代"], ["プーランク", "近現代"], ["カプースチン", "近現代"],
+        ["kapustin", "近現代"], ["ガーシュウィン", "近現代"], ["クレストン", "近現代"], ["creston", "近現代"],
+        ["トルミス", "近現代"], ["tormis", "近現代"], ["武満", "近現代"], ["サティ", "近現代"]
+      ];
+
+      /* ================= state ================= */
+      function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+      function loadState() {
+        try {
+          var raw = localStorage.getItem(LS_KEY);
+          if (raw) {
+            var s = JSON.parse(raw);
+            if (s && Array.isArray(s.pieces)) return { pieces: s.pieces, settings: Object.assign({ notifyWithin: 7 }, s.settings || {}) };
+          }
+        } catch (e) { /* fall through to fresh state */ }
+        return { pieces: [], settings: { notifyWithin: 7 } };
+      }
+      var state = loadState();
+      function saveState() {
+        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+        catch (e) { toast("保存できませんでした（ブラウザの容量制限など）"); }
+      }
+      function byId(id) { return state.pieces.find(function (p) { return p.id === id; }) || null; }
+
+      /* ================= helpers ================= */
+      function $(sel) { return document.querySelector(sel); }
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+      }
+      var toastTimer = null;
+      function toast(msg) {
+        var t = $("#toast"); t.textContent = msg; t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+      }
+      function todayStart() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+      function parseDate(s) { if (!s) return null; var d = new Date(s + "T00:00:00"); return isNaN(d.getTime()) ? null : d; }
+      function daysLeft(dateStr) {
+        var d = parseDate(dateStr); if (!d) return null;
+        return Math.round((d - todayStart()) / 86400000);
+      }
+      function fmtDate(s) {
+        var d = parseDate(s); if (!d) return "";
+        var w = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+        return d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate() + "（" + w + "）";
+      }
+      function daysBadge(n) {
+        if (n === null) return "";
+        if (n < 0) return '<span class="days-badge overdue">' + Math.abs(n) + "日 超過</span>";
+        if (n === 0) return '<span class="days-badge today">今日</span>';
+        if (n === 1) return '<span class="days-badge">明日</span>';
+        return '<span class="days-badge">あと' + n + "日</span>";
+      }
+      /* ================= calendar (Google Calendar button + .ics) ================= */
+      var CAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+      function calDateStr(s) { return String(s || "").replace(/-/g, ""); }
+      function nextCalDateStr(s) {
+        var d = parseDate(s); if (!d) return "";
+        d.setDate(d.getDate() + 1);
+        return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+      }
+      function evTitle(ev, p) {
+        return "【" + ev.label + "】" + p.title + (ev.name ? " — " + ev.name : "");
+      }
+      function evDetails(ev, p) {
+        var lines = [];
+        if (p.composer) lines.push("作曲者：" + p.composer);
+        lines.push(ev.label + (ev.name ? "「" + ev.name + "」" : "") + "：" + fmtDate(ev.date));
+        if (p.memo) lines.push("メモ：" + p.memo);
+        lines.push("");
+        lines.push("演奏したい曲リスト（Pages版）から登録");
+        return lines.join("\n");
+      }
+      function googleCalUrl(ev, p) {
+        var params = new URLSearchParams();
+        params.set("action", "TEMPLATE");
+        params.set("text", evTitle(ev, p));
+        params.set("dates", calDateStr(ev.date) + "/" + nextCalDateStr(ev.date));
+        params.set("details", evDetails(ev, p));
+        return "https://calendar.google.com/calendar/render?" + params.toString();
+      }
+      function icsEscape(s) {
+        return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+      }
+      function icsStamp() {
+        var d = new Date();
+        return d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0") +
+          "T" + String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + String(d.getUTCSeconds()).padStart(2, "0") + "Z";
+      }
+      function icsEvent(ev, p) {
+        var alarms = [7, 3, 1].map(function (days) {
+          return ["BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape(evTitle(ev, p)), "TRIGGER:-P" + days + "D", "END:VALARM"].join("\r\n");
+        }).join("\r\n");
+        return [
+          "BEGIN:VEVENT",
+          "UID:" + p.id + "-" + ev.kind + "-" + calDateStr(ev.date) + "-" + String(ev.name || "").split("").reduce(function (h, c) { return ((h * 31) + c.charCodeAt(0)) >>> 0; }, 0).toString(36) + "@song-planner-pages",
+          "DTSTAMP:" + icsStamp(),
+          "DTSTART;VALUE=DATE:" + calDateStr(ev.date),
+          "DTEND;VALUE=DATE:" + nextCalDateStr(ev.date),
+          "SUMMARY:" + icsEscape(evTitle(ev, p)),
+          "DESCRIPTION:" + icsEscape(evDetails(ev, p)),
+          alarms,
+          "END:VEVENT"
+        ].join("\r\n");
+      }
+      function downloadIcs(filename, eventsWithPiece) {
+        if (!eventsWithPiece.length) { toast("日程が登録された予定がありません"); return; }
+        var body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//song-planner-pages//JP", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"]
+          .concat(eventsWithPiece.map(function (x) { return icsEvent(x.ev, x.p); }))
+          .concat(["END:VCALENDAR"]).join("\r\n");
+        var blob = new Blob(["\ufeff" + body], { type: "text/calendar;charset=utf-8" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        toast("カレンダー用ファイル（.ics）を書き出しました");
+      }
+      function calButtonsHtml(ev, p) {
+        return '<span class="cal-actions">' +
+          '<a class="cal-btn" href="' + esc(googleCalUrl(ev, p)) + '" target="_blank" rel="noopener">' + CAL_ICON + 'Googleカレンダー</a>' +
+          '<button type="button" class="cal-btn" data-ics-piece="' + esc(p.id) + '" data-ics-kind="' + esc(ev.kind) + '" data-ics-date="' + esc(ev.date) + '" data-ics-name="' + esc(ev.name || "") + '">' + CAL_ICON + '.ics</button>' +
+        '</span>';
+      }
+      function findEventFromBtn(btn) {
+        var p = byId(btn.getAttribute("data-ics-piece")); if (!p) return null;
+        var kind = btn.getAttribute("data-ics-kind"), date = btn.getAttribute("data-ics-date"), name = btn.getAttribute("data-ics-name") || "";
+        var ev = pieceEvents(p).filter(function (e) { return e.kind === kind && e.date === date && (e.name || "") === name; })[0];
+        return ev ? { ev: ev, p: p } : null;
+      }
+      function handleIcsClick(ev) {
+        var btn = ev.target.closest("[data-ics-piece]"); if (!btn) return false;
+        var found = findEventFromBtn(btn); if (!found) return true;
+        var safe = (found.p.title || "event").replace(/[\\/:*?"<>|]/g, "").slice(0, 40);
+        downloadIcs("song-planner-" + safe + "-" + found.ev.date + ".ics", [found]);
+        return true;
+      }
+
+      function guessEra(composer, year) {
+        var c = (composer || "").toLowerCase();
+        for (var i = 0; i < COMPOSER_ERA.length; i++) {
+          if (c.indexOf(COMPOSER_ERA[i][0]) !== -1) return COMPOSER_ERA[i][1];
+        }
+        var y = parseInt(year, 10);
+        if (!isNaN(y)) {
+          if (y < 1750) return "バロック";
+          if (y < 1820) return "古典派";
+          if (y < 1900) return "ロマン派";
+          return "近現代";
+        }
+        return "";
+      }
+
+      /* ================= events (dates) ================= */
+      function pieceEvents(p) {
+        var evs = [];
+        if (p.start) evs.push({ pieceId: p.id, kind: "start", label: "譜読み開始", name: "", date: p.start });
+        if (p.deadline) evs.push({ pieceId: p.id, kind: "deadline", label: "仕上げ期限", name: "", date: p.deadline });
+        (p.concerts || []).forEach(function (c) {
+          if (c.date) evs.push({ pieceId: p.id, kind: "concert", label: "本番", name: c.name || "", date: c.date });
+        });
+        return evs;
+      }
+      function allEvents() {
+        var evs = [];
+        state.pieces.forEach(function (p) { evs = evs.concat(pieceEvents(p)); });
+        evs.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+        return evs;
+      }
+
+      /* ================= prereq graph ================= */
+      function cleanGroups(p) {
+        return (p.prereqGroups || []).map(function (g) {
+          return g.filter(function (id) { return id !== p.id && byId(id); });
+        }).filter(function (g) { return g.length > 0; });
+      }
+      function groupSatisfied(g) {
+        return g.every(function (id) { var q = byId(id); return q && q.status === "done"; });
+      }
+      function isReady(p) {
+        var gs = cleanGroups(p);
+        if (gs.length === 0) return true;
+        return gs.some(groupSatisfied);
+      }
+      function createsCycle(targetId, groups) {
+        var deps = {};
+        state.pieces.forEach(function (p) { deps[p.id] = cleanGroups(p).reduce(function (a, g) { return a.concat(g); }, []); });
+        deps[targetId] = groups.reduce(function (a, g) { return a.concat(g); }, []);
+        var seen = {}, stack = (deps[targetId] || []).slice();
+        while (stack.length) {
+          var cur = stack.pop();
+          if (cur === targetId) return true;
+          if (seen[cur]) continue;
+          seen[cur] = true;
+          (deps[cur] || []).forEach(function (n) { stack.push(n); });
+        }
+        return false;
+      }
+      function computeDepths() {
+        var depth = {}, visiting = {};
+        function depthOf(p) {
+          if (depth[p.id] != null) return depth[p.id];
+          if (visiting[p.id]) return 0;
+          visiting[p.id] = true;
+          var gs = cleanGroups(p), d = 0;
+          gs.forEach(function (g) { g.forEach(function (id) { var q = byId(id); if (q) d = Math.max(d, depthOf(q) + 1); }); });
+          visiting[p.id] = false;
+          depth[p.id] = d; return d;
+        }
+        state.pieces.forEach(depthOf);
+        return depth;
+      }
+
+      /* ================= rendering: alerts ================= */
+      function renderAlerts() {
+        var area = $("#alertArea");
+        var within = state.settings.notifyWithin;
+        var evs = allEvents().filter(function (ev) {
+          var n = daysLeft(ev.date);
+          var p = byId(ev.pieceId);
+          if (!p || p.status === "done") return false;
+          if (n < 0) return ev.kind !== "start"; /* 過ぎた譜読み開始は出さない。期限・本番の超過は出す */
+          return n <= within;
+        });
+        if (evs.length === 0) { area.innerHTML = ""; return; }
+        var hasOverdue = evs.some(function (ev) { return daysLeft(ev.date) < 0; });
+        var items = evs.map(function (ev) {
+          var p = byId(ev.pieceId), n = daysLeft(ev.date);
+          var when = n < 0 ? Math.abs(n) + "日過ぎています" : n === 0 ? "今日です" : n === 1 ? "明日です" : "あと" + n + "日です";
+          return "<li>" + esc(ev.label) + (ev.name ? "「" + esc(ev.name) + "」" : "") + "：" +
+            "<b>" + esc(p.title) + "</b>" + (p.composer ? "（" + esc(p.composer) + "）" : "") +
+            " — " + fmtDate(ev.date) + ' <span class="days">' + when + "</span></li>";
+        }).join("");
+        area.innerHTML = '<div class="alert' + (hasOverdue ? " overdue" : "") + '" role="alert">' +
+          "<h2>" + (hasOverdue ? "期日を過ぎた予定があります" : "期日が近づいている予定") + "</h2><ul>" + items + "</ul></div>";
+      }
+
+      /* ================= rendering: list ================= */
+      var curView = "list";
+      function visiblePieces() {
+        var q = $("#q").value.trim().toLowerCase();
+        var g = $("#fGenre").value, e = $("#fEra").value, s = $("#fStatus").value;
+        var list = state.pieces.filter(function (p) {
+          if (g && p.genre !== g) return false;
+          if (e && p.era !== e) return false;
+          if (s && p.status !== s) return false;
+          if (q) {
+            var hay = (p.title + " " + (p.composer || "") + " " + (p.memo || "")).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          return true;
+        });
+        var mode = $("#sort").value;
+        list.sort(function (a, b) {
+          switch (mode) {
+            case "composer": return (a.composer || "￿").localeCompare(b.composer || "￿", "ja") || a.title.localeCompare(b.title, "ja");
+            case "era": return (ERA_ORDER[a.era] - ERA_ORDER[b.era]) || ((a.year || 9999) - (b.year || 9999)) || a.title.localeCompare(b.title, "ja");
+            case "year": return ((a.year || 99999) - (b.year || 99999)) || a.title.localeCompare(b.title, "ja");
+            case "want": return (b.want - a.want) || (b.createdAt - a.createdAt);
+            case "new": return b.createdAt - a.createdAt;
+            case "old": return a.createdAt - b.createdAt;
+            default: return a.title.localeCompare(b.title, "ja");
+          }
+        });
+        return list;
+      }
+      function starsHtml(w) {
+        var s = "";
+        for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= w ? "" : "off") + '">★</span>';
+        return '<span class="stars" aria-label="弾きたい度 ' + w + '">' + s + "</span>";
+      }
+      function prereqNote(p) {
+        var gs = cleanGroups(p);
+        if (gs.length === 0) return "";
+        var parts = gs.map(function (g) {
+          return g.map(function (id) { var q = byId(id); return q ? esc(q.title) : ""; }).join(" ＋ ");
+        });
+        var joiner = gs.length > 1 ? ' <b>または</b> ' : " ";
+        return '<div class="prereq-note">前提：' + parts.join(joiner) + " を終えてから</div>";
+      }
+      function cardHtml(p) {
+        var evs = pieceEvents(p).filter(function (ev) { return daysLeft(ev.date) >= 0 || ev.kind !== "start"; });
+        var nextEv = evs.filter(function (ev) { return daysLeft(ev.date) >= 0; })[0];
+        var overdueEv = evs.filter(function (ev) { return daysLeft(ev.date) < 0 && p.status !== "done"; })[0];
+        var dateLines = pieceEvents(p).map(function (ev) {
+          var label = ev.kind === "concert"
+            ? "本番" + (ev.name ? "「" + esc(ev.name) + "」" : "")
+            : esc(ev.label);
+          var badge = p.status !== "done" && ev.kind !== "start" ? " " + daysBadge(daysLeft(ev.date)) : "";
+          return '<div class="ev-row"><span class="ev-label">' + label + "：<b>" + fmtDate(ev.date) + "</b>" + badge + "</span>" + calButtonsHtml(ev, p) + "</div>";
+        }).join("");
+        var ptinaLink = p.ptinaUrl
+          ? '<a class="iconbtn" href="' + esc(p.ptinaUrl) + '" target="_blank" rel="noopener">ピティナの曲ページ</a>'
+          : '<a class="iconbtn" href="' + PTINA_SEARCH + encodeURIComponent(((p.composer || "") + " " + p.title).trim()) + '" target="_blank" rel="noopener">ピティナで検索</a>';
+        var ptinaMeta = [];
+        if (p.ptinaStep) ptinaMeta.push("難易度 " + esc(p.ptinaStep));
+        if (p.ptinaTime) ptinaMeta.push(esc(p.ptinaTime));
+        return '<article class="card" data-id="' + p.id + '">' +
+          (p.composer ? '<div class="composer">' + esc(p.composer) + "</div>" : "") +
+          "<h3>" + esc(p.title) + "</h3>" +
+          '<div class="chips">' +
+            (p.era ? '<span class="chip era">' + esc(p.era) + (p.year ? " ・ " + p.year + "年" : "") + "</span>" : (p.year ? '<span class="chip">' + p.year + "年</span>" : "")) +
+            (p.genre ? '<span class="chip">' + esc(p.genre) + "</span>" : "") +
+            '<span class="chip status-' + p.status + '">' + STATUS_LABEL[p.status] + "</span>" +
+          "</div>" +
+          "<div>" + starsHtml(p.want) + "</div>" +
+          (p.memo ? '<p class="memo">' + esc(p.memo) + "</p>" : "") +
+          (dateLines ? '<div class="dates">' + dateLines + "</div>" : "") +
+          prereqNote(p) +
+          '<div class="foot">' +
+            ptinaLink +
+            (ptinaMeta.length ? '<span class="chip">' + ptinaMeta.join(" ・ ") + "</span>" : "") +
+            '<span class="spacer"></span>' +
+            '<select class="status-select" data-act="status" aria-label="ステータスを変更">' +
+              ["want", "doing", "done"].map(function (k) { return '<option value="' + k + '"' + (p.status === k ? " selected" : "") + ">" + STATUS_LABEL[k] + "</option>"; }).join("") +
+            "</select>" +
+            '<button type="button" class="iconbtn" data-act="edit">編集</button>' +
+          "</div>" +
+        "</article>";
+      }
+      function renderList() {
+        var list = visiblePieces();
+        $("#cards").innerHTML = list.map(cardHtml).join("");
+        $("#listEmpty").hidden = state.pieces.length !== 0;
+        $("#noMatch").hidden = !(state.pieces.length > 0 && list.length === 0);
+        $("#count").textContent = state.pieces.length === 0 ? "" :
+          "全" + state.pieces.length + "曲" + (list.length !== state.pieces.length ? "（" + list.length + "曲を表示）" : "");
+      }
+
+      /* ================= rendering: roadmap ================= */
+      function renderRoadmap() {
+        var canvas = $("#roadmapCanvas");
+        var connected = state.pieces.filter(function (p) {
+          if (cleanGroups(p).length > 0) return true;
+          return state.pieces.some(function (q) { return cleanGroups(q).some(function (g) { return g.indexOf(p.id) !== -1; }); });
+        });
+        $("#roadmapEmpty").hidden = connected.length !== 0;
+        $("#roadmapFrame").style.display = connected.length === 0 ? "none" : "";
+        if (connected.length === 0) { canvas.innerHTML = ""; return; }
+        var depths = computeDepths();
+        var NODE_W = 208, NODE_H = 96, GAP_X = 92, GAP_Y = 18, PAD = 22;
+        var byDepth = {};
+        connected.forEach(function (p) { var d = depths[p.id] || 0; (byDepth[d] = byDepth[d] || []).push(p); });
+        var depthKeys = Object.keys(byDepth).map(Number).sort(function (a, b) { return a - b; });
+        var pos = {}, maxRows = 0;
+        depthKeys.forEach(function (d) {
+          byDepth[d].sort(function (a, b) { return a.createdAt - b.createdAt; });
+          maxRows = Math.max(maxRows, byDepth[d].length);
+          byDepth[d].forEach(function (p, i) { pos[p.id] = { x: PAD + d * (NODE_W + GAP_X), y: PAD + i * (NODE_H + GAP_Y) }; });
+        });
+        var maxDepth = depthKeys[depthKeys.length - 1];
+        var W = PAD * 2 + (maxDepth + 1) * NODE_W + maxDepth * GAP_X;
+        var H = PAD * 2 + maxRows * NODE_H + (maxRows - 1) * GAP_Y;
+        var paths = "";
+        connected.forEach(function (p) {
+          var gs = cleanGroups(p);
+          var isOr = gs.length > 1;
+          gs.forEach(function (g) {
+            g.forEach(function (id) {
+              if (!pos[id] || !pos[p.id]) return;
+              var x1 = pos[id].x + NODE_W, y1 = pos[id].y + NODE_H / 2;
+              var x2 = pos[p.id].x, y2 = pos[p.id].y + NODE_H / 2;
+              var mx = Math.max(28, (x2 - x1) / 2);
+              var color = isOr ? "var(--gold)" : "var(--ink-faint)";
+              paths += '<path d="M' + x1 + " " + y1 + " C " + (x1 + mx) + " " + y1 + ", " + (x2 - mx) + " " + y2 + ", " + (x2 - 7) + " " + y2 + '" fill="none" stroke="' + color + '" stroke-width="' + (isOr ? 2.6 : 2) + '"/>' +
+                '<path d="M' + x2 + " " + y2 + ' l -8 -4.5 v 9 z" fill="' + color + '"/>';
+            });
+          });
+        });
+        var nodes = connected.map(function (p) {
+          var d = depths[p.id] || 0, pp = pos[p.id];
+          var badge, cls = "";
+          if (p.status === "done") { badge = '<span class="badge done">演奏済み</span>'; cls = " is-done"; }
+          else if (isReady(p)) { badge = '<span class="badge ready">今取り組める</span>'; cls = " is-ready"; }
+          else { badge = '<span class="badge wait">前提待ち</span>'; }
+          return '<button type="button" class="rnode' + cls + '" data-node="' + p.id + '" style="left:' + pp.x + "px;top:" + pp.y + 'px">' +
+            '<span class="step">STEP ' + (d + 1) + "</span>" +
+            '<span class="t" style="display:block">' + esc(p.title) + "</span>" +
+            (p.composer ? '<span class="c">' + esc(p.composer) + "</span>" : "") +
+            "<br />" + badge + "</button>";
+        }).join("");
+        canvas.style.width = W + "px"; canvas.style.height = H + "px";
+        canvas.innerHTML = '<svg width="' + W + '" height="' + H + '" aria-hidden="true">' + paths + "</svg>" + nodes;
+      }
+
+      /* ================= rendering: schedule ================= */
+      function renderSchedule() {
+        var evs = allEvents();
+        $("#schedEmpty").hidden = evs.length !== 0;
+        var upcoming = evs.filter(function (ev) { return daysLeft(ev.date) >= 0; });
+        var past = evs.filter(function (ev) { return daysLeft(ev.date) < 0; }).reverse();
+        function row(ev, isPast) {
+          var p = byId(ev.pieceId); if (!p) return "";
+          return '<div class="sched-row' + (isPast ? " past" : "") + '">' +
+            '<span class="date">' + fmtDate(ev.date) + "</span>" +
+            '<span class="kind ' + ev.kind + '">' + esc(ev.label) + "</span>" +
+            '<span class="what"><span class="title">' + esc(p.title) + "</span>" +
+              (p.composer ? "（" + esc(p.composer) + "）" : "") +
+              (ev.name ? " — " + esc(ev.name) : "") + "</span>" +
+            (isPast ? '<span class="days-badge">' + Math.abs(daysLeft(ev.date)) + "日前</span>" : daysBadge(daysLeft(ev.date))) +
+            calButtonsHtml(ev, p) +
+          "</div>";
+        }
+        var html = "";
+        if (upcoming.length) html += '<h2 class="section">これからの予定</h2><div class="sched">' + upcoming.map(function (ev) { return row(ev, false); }).join("") + "</div>";
+        if (past.length) html += '<h2 class="section">過ぎた予定</h2><div class="sched">' + past.map(function (ev) { return row(ev, true); }).join("") + "</div>";
+        $("#schedArea").innerHTML = html;
+      }
+
+      function renderAll() { renderAlerts(); renderList(); renderRoadmap(); renderSchedule(); }
+
+      /* ================= editor ================= */
+      var editor = $("#editor");
+      var editingId = null;
+      var editWant = 1;
+      var editGroups = []; /* array of arrays of piece ids */
+
+      function setStars() {
+        document.querySelectorAll("#starRow .starbtn").forEach(function (b) {
+          b.classList.toggle("on", parseInt(b.dataset.star, 10) <= editWant);
+        });
+      }
+      function concertRowHtml(name, date) {
+        return '<div class="concert-row">' +
+          '<input type="text" class="c-name" placeholder="本番の名前（例：定期演奏会）" value="' + esc(name || "") + '" />' +
+          '<input type="date" class="c-date" value="' + esc(date || "") + '" />' +
+          '<button type="button" class="iconbtn c-del" aria-label="この本番を削除">削除</button></div>';
+      }
+      function renderGroupEditor() {
+        var area = $("#groupArea");
+        var candidates = state.pieces.filter(function (p) { return p.id !== editingId; });
+        if (editGroups.length === 0) {
+          area.innerHTML = '<p class="hint" style="margin-top:0">前提はまだありません。下のボタンでグループを作り、この曲より先にやる曲を選んでください。</p>';
+          return;
+        }
+        area.innerHTML = editGroups.map(function (g, gi) {
+          var chips = candidates.map(function (c) {
+            var on = g.indexOf(c.id) !== -1;
+            return '<button type="button" class="pickchip" data-group="' + gi + '" data-piece="' + c.id + '" aria-pressed="' + on + '">' + esc(c.title) + "</button>";
+          }).join("");
+          return '<div class="group-box"><div class="ghead"><span>グループ' + (gi + 1) +
+            (editGroups.length > 1 ? "（OR候補）" : "（全部終えてから）") + "</span>" +
+            '<button type="button" class="iconbtn" data-delgroup="' + gi + '">グループを削除</button></div>' +
+            '<div class="pickchips">' + (chips || '<span class="hint">先に他の曲を登録してください</span>') + "</div></div>";
+        }).join("");
+      }
+      function openEditor(id) {
+        editingId = id || null;
+        var p = id ? byId(id) : null;
+        $("#dlgTitle").textContent = p ? "曲を編集" : "曲を追加";
+        $("#deleteBtn").hidden = !p;
+        $("#formError").style.display = "none";
+        $("#fTitle").value = p ? p.title : "";
+        $("#fComposer").value = p ? (p.composer || "") : "";
+        $("#eEra").value = p ? (p.era || "") : "";
+        $("#fYear").value = p && p.year ? p.year : "";
+        $("#eGenre").value = p ? (p.genre || "ピアノ") : "ピアノ";
+        $("#eStatus").value = p ? p.status : "want";
+        editWant = p ? p.want : 1; setStars();
+        $("#fMemo").value = p ? (p.memo || "") : "";
+        $("#fPtinaStep").value = p ? (p.ptinaStep || "") : "";
+        $("#fPtinaTime").value = p ? (p.ptinaTime || "") : "";
+        $("#fPtinaUrl").value = p ? (p.ptinaUrl || "") : "";
+        $("#fStart").value = p ? (p.start || "") : "";
+        $("#fDeadline").value = p ? (p.deadline || "") : "";
+        $("#concertRows").innerHTML = p && p.concerts && p.concerts.length
+          ? p.concerts.map(function (c) { return concertRowHtml(c.name, c.date); }).join("")
+          : concertRowHtml("", "");
+        editGroups = p ? cleanGroups(p).map(function (g) { return g.slice(); }) : [];
+        renderGroupEditor();
+        editor.showModal();
+        var body = editor.querySelector(".dlg-body");
+        if (body) body.scrollTop = 0;
+      }
+      function closeEditor() { editor.close(); }
+
+      function formError(msg) {
+        var e = $("#formError"); e.textContent = msg; e.style.display = "block";
+        e.scrollIntoView({ block: "nearest" });
+      }
+      function saveFromForm(ev) {
+        ev.preventDefault();
+        var title = $("#fTitle").value.trim();
+        if (!title) { formError("曲名を入力してください。"); $("#fTitle").focus(); return; }
+        var groups = editGroups.map(function (g) { return g.slice(); }).filter(function (g) { return g.length > 0; });
+        var tmpId = editingId || "__new__";
+        if (createsCycle(tmpId, groups)) {
+          formError("前提のつながりが循環しています（ぐるっと戻ってくる組み合わせ）。前提を見直してください。");
+          return;
+        }
+        var concerts = [];
+        document.querySelectorAll("#concertRows .concert-row").forEach(function (row) {
+          var name = row.querySelector(".c-name").value.trim();
+          var date = row.querySelector(".c-date").value;
+          if (name || date) concerts.push({ name: name, date: date });
+        });
+        var ptinaUrl = $("#fPtinaUrl").value.trim();
+        if (ptinaUrl && !/^https?:\/\//i.test(ptinaUrl)) ptinaUrl = "https://" + ptinaUrl;
+        var yearVal = parseInt($("#fYear").value, 10);
+        var data = {
+          title: title,
+          composer: $("#fComposer").value.trim(),
+          era: $("#eEra").value,
+          year: isNaN(yearVal) ? null : yearVal,
+          genre: $("#eGenre").value,
+          status: $("#eStatus").value,
+          want: editWant,
+          memo: $("#fMemo").value.trim(),
+          ptinaStep: $("#fPtinaStep").value.trim(),
+          ptinaTime: $("#fPtinaTime").value.trim(),
+          ptinaUrl: ptinaUrl,
+          start: $("#fStart").value,
+          deadline: $("#fDeadline").value,
+          concerts: concerts,
+          prereqGroups: groups
+        };
+        if (editingId) {
+          var p = byId(editingId);
+          Object.keys(data).forEach(function (k) { p[k] = data[k]; });
+          toast("保存しました");
+        } else {
+          data.id = uid(); data.createdAt = Date.now();
+          state.pieces.push(data);
+          toast("「" + title + "」を追加しました");
+        }
+        saveState(); closeEditor(); renderAll();
+      }
+
+      /* ================= delete confirm ================= */
+      var confirmDlg = $("#confirmDlg");
+      var pendingDeleteId = null;
+      function askDelete(id) {
+        var p = byId(id); if (!p) return;
+        pendingDeleteId = id;
+        $("#confirmText").textContent = "「" + p.title + "」を削除します。この曲を前提にしている曲からは、前提の指定も外れます。";
+        confirmDlg.showModal();
+      }
+
+      /* ================= wiring ================= */
+      /* Filter selects and form selects share option lists but are separate elements */
+      (function buildFilters() {
+        var gf = document.getElementById("fGenre");
+        gf.innerHTML = '<option value="">ジャンル：すべて</option>' + GENRES.map(function (g) { return '<option value="' + g + '">' + g + "</option>"; }).join("");
+        var ef = document.getElementById("fEra");
+        ef.innerHTML = '<option value="">時代：すべて</option>' + ERAS.map(function (e) { return '<option value="' + e + '">' + e + "</option>"; }).join("");
+        var formGenre = document.querySelector("#editForm #eGenre");
+        var formEra = document.querySelector("#editForm #eEra");
+        formGenre.innerHTML = GENRES.map(function (g) { return '<option value="' + g + '">' + g + "</option>"; }).join("");
+        formEra.innerHTML = '<option value="">（未設定）</option>' + ERAS.map(function (e) { return '<option value="' + e + '">' + e + "</option>"; }).join("");
+      })();
+
+      document.querySelectorAll(".tabs button").forEach(function (b) {
+        b.addEventListener("click", function () {
+          curView = b.dataset.view;
+          document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+          $("#view-list").hidden = curView !== "list";
+          $("#view-roadmap").hidden = curView !== "roadmap";
+          $("#view-schedule").hidden = curView !== "schedule";
+          if (curView === "roadmap") renderRoadmap();
+        });
+      });
+      ["q", "fGenre", "fEra", "fStatus", "sort"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", renderList);
+        document.getElementById(id).addEventListener("change", renderList);
+      });
+      $("#addBtn").addEventListener("click", function () { openEditor(null); });
+      $("#emptyAddBtn").addEventListener("click", function () { openEditor(null); });
+
+      $("#cards").addEventListener("click", function (ev) {
+        if (handleIcsClick(ev)) return;
+        var card = ev.target.closest(".card"); if (!card) return;
+        var actBtn = ev.target.closest("[data-act='edit']");
+        if (actBtn) openEditor(card.dataset.id);
+      });
+      $("#schedArea").addEventListener("click", function (ev) { handleIcsClick(ev); });
+      $("#exportAllIcsBtn").addEventListener("click", function () {
+        var items = [];
+        allEvents().forEach(function (ev) { var p = byId(ev.pieceId); if (p) items.push({ ev: ev, p: p }); });
+        downloadIcs("song-planner-all.ics", items);
+      });
+      $("#cards").addEventListener("change", function (ev) {
+        var sel = ev.target.closest("[data-act='status']"); if (!sel) return;
+        var card = ev.target.closest(".card");
+        var p = byId(card.dataset.id); if (!p) return;
+        p.status = sel.value; saveState(); renderAll();
+        toast("「" + p.title + "」を「" + STATUS_LABEL[p.status] + "」にしました");
+      });
+      $("#roadmapCanvas").addEventListener("click", function (ev) {
+        var node = ev.target.closest("[data-node]");
+        if (node) openEditor(node.dataset.node);
+      });
+
+      $("#starRow").addEventListener("click", function (ev) {
+        var b = ev.target.closest("[data-star]"); if (!b) return;
+        editWant = parseInt(b.dataset.star, 10); setStars();
+      });
+      $("#guessEraBtn").addEventListener("click", function () {
+        var era = guessEra($("#fComposer").value, $("#fYear").value);
+        if (era) { $("#eEra").value = era; toast("時代を「" + era + "」と推定しました"); }
+        else toast("作曲者名や作曲年から推定できませんでした");
+      });
+      $("#ptinaSearchBtn").addEventListener("click", function () {
+        var kw = (($("#fComposer").value || "") + " " + ($("#fTitle").value || "")).trim();
+        if (!kw) { toast("先に曲名か作曲者を入力してください"); return; }
+        window.open(PTINA_SEARCH + encodeURIComponent(kw), "_blank", "noopener");
+      });
+      $("#addConcertBtn").addEventListener("click", function () {
+        $("#concertRows").insertAdjacentHTML("beforeend", concertRowHtml("", ""));
+      });
+      $("#concertRows").addEventListener("click", function (ev) {
+        var del = ev.target.closest(".c-del"); if (!del) return;
+        var rows = document.querySelectorAll("#concertRows .concert-row");
+        if (rows.length <= 1) {
+          del.closest(".concert-row").querySelector(".c-name").value = "";
+          del.closest(".concert-row").querySelector(".c-date").value = "";
+        } else del.closest(".concert-row").remove();
+      });
+      $("#addGroupBtn").addEventListener("click", function () { editGroups.push([]); renderGroupEditor(); });
+      $("#groupArea").addEventListener("click", function (ev) {
+        var chip = ev.target.closest(".pickchip");
+        if (chip) {
+          var gi = parseInt(chip.dataset.group, 10), pid = chip.dataset.piece;
+          var g = editGroups[gi], idx = g.indexOf(pid);
+          if (idx === -1) g.push(pid); else g.splice(idx, 1);
+          renderGroupEditor(); return;
+        }
+        var del = ev.target.closest("[data-delgroup]");
+        if (del) { editGroups.splice(parseInt(del.dataset.delgroup, 10), 1); renderGroupEditor(); }
+      });
+      $("#editForm").addEventListener("submit", saveFromForm);
+      $("#cancelBtn").addEventListener("click", closeEditor);
+      $("#deleteBtn").addEventListener("click", function () { closeEditor(); askDelete(editingId); });
+      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; });
+      $("#confirmYes").addEventListener("click", function () {
+        if (!pendingDeleteId) return;
+        var p = byId(pendingDeleteId);
+        state.pieces = state.pieces.filter(function (x) { return x.id !== pendingDeleteId; });
+        saveState(); confirmDlg.close(); pendingDeleteId = null; renderAll();
+        toast("「" + (p ? p.title : "") + "」を削除しました");
+      });
+
+      /* settings + data portability */
+      var notifySel = $("#notifyWithin");
+      notifySel.value = String(state.settings.notifyWithin);
+      notifySel.addEventListener("change", function () {
+        state.settings.notifyWithin = parseInt(notifySel.value, 10);
+        saveState(); renderAlerts();
+      });
+      $("#exportBtn").addEventListener("click", function () {
+        var blob = new Blob([JSON.stringify({ app: "song-planner-pages", version: 1, pieces: state.pieces, settings: state.settings }, null, 2)], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        var d = new Date();
+        a.download = "song-planner-" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + ".json";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        toast("JSONを書き出しました");
+      });
+      $("#importBtn").addEventListener("click", function () { $("#importFile").click(); });
+      $("#importFile").addEventListener("change", function (ev) {
+        var file = ev.target.files[0]; if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var data = JSON.parse(reader.result);
+            var pieces = Array.isArray(data) ? data : data.pieces;
+            if (!Array.isArray(pieces)) throw new Error("bad format");
+            pieces.forEach(function (p) {
+              if (!p.id) p.id = uid();
+              if (!p.createdAt) p.createdAt = Date.now();
+              p.want = [1, 2, 3].indexOf(p.want) !== -1 ? p.want : 1;
+              p.status = STATUS_LABEL[p.status] ? p.status : "want";
+              p.concerts = Array.isArray(p.concerts) ? p.concerts : [];
+              p.prereqGroups = Array.isArray(p.prereqGroups) ? p.prereqGroups : [];
+            });
+            state.pieces = pieces;
+            if (data.settings) state.settings = Object.assign(state.settings, data.settings);
+            notifySel.value = String(state.settings.notifyWithin);
+            saveState(); renderAll();
+            toast(pieces.length + "曲を読み込みました（既存データと置き換え）");
+          } catch (e) { toast("読み込めませんでした：JSONの形式が違うようです"); }
+          ev.target.value = "";
+        };
+        reader.readAsText(file);
+      });
+
+      renderAll();
+    </script>
+  </body>
+</html>
