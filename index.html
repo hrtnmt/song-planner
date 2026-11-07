@@ -1063,6 +1063,84 @@
       .account-status { font-size: 12.5px; color: var(--ink-faint); margin: 10px 0 0; }
       .account-status.error { color: var(--danger); font-weight: 700; }
     </style>
+
+    <style id="roadmap-compact">
+      /* ===== ロードマップ：コンパクトカード＋つなぐモード＋整列 ===== */
+      .rnode {
+        width: 176px; padding: 9px 11px 10px; border-radius: 10px;
+      }
+      .rnode .c {
+        display: block; font-size: 11px; line-height: 1.4; color: var(--ink-soft);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .rnode .t {
+        font-size: 13.5px; line-height: 1.35; margin: 1px 0 0;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      }
+      .rnode .node-prog { display: flex; align-items: center; gap: 7px; margin-top: 7px; }
+      .rnode .np-track {
+        flex: 1 1 auto; min-width: 34px; height: 5px; border-radius: 999px;
+        background: var(--surface-2); overflow: hidden;
+      }
+      .rnode .np-fill { display: block; height: 100%; border-radius: 999px; background: var(--ink-faint); }
+      .rnode .np-fill.st-notstarted { background: var(--ink-soft); }
+      .rnode .np-fill.st-reading, .rnode .np-fill.st-doing { background: var(--gold); }
+      .rnode .np-fill.st-finishing { background: var(--accent); }
+      .rnode .np-fill.st-done { background: var(--ok); }
+      .rnode .node-prog .st-label { font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+      .rnode .st-label.st-want { color: var(--ink-faint); }
+      .rnode .st-label.st-notstarted { color: var(--ink-soft); }
+      .rnode .st-label.st-reading, .rnode .st-label.st-doing { color: var(--warn); }
+      .rnode .st-label.st-finishing { color: var(--accent); }
+      .rnode .st-label.st-done { color: var(--ok); }
+      /* ドラッグ中は transform のトランジションを切り、指に吸着させる */
+      .rnode.dragging { transition: border-color .18s ease, box-shadow .22s ease; z-index: 8; }
+      /* つなぐモード：選択中カード */
+      .rnode.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow); }
+      .rnode.sel::after {
+        content: "✓"; position: absolute; top: -9px; right: -9px; z-index: 3;
+        width: 21px; height: 21px; border-radius: 50%;
+        background: var(--accent); color: #fff; font-size: 12.5px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; pointer-events: none;
+      }
+      @media (prefers-color-scheme: dark) { .rnode.sel::after { color: #1d1216; } }
+      .roadmap-canvas.connecting .rnode { cursor: pointer; }
+      /* AND枠・ANDピルの当たり判定は、つなぐモードの間だけ有効 */
+      .and-hit, .and-frame-hit { pointer-events: none; }
+      .roadmap-canvas.connecting .and-hit { pointer-events: all; cursor: pointer; }
+      .roadmap-canvas.connecting .and-frame-hit { pointer-events: stroke; cursor: pointer; }
+      /* つなぐモードの操作バー：下部ツールバーの上に浮かぶ */
+      #view-roadmap .rm-connect-bar {
+        position: absolute; z-index: 36; left: 50%; transform: translateX(-50%);
+        bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+        width: max-content; max-width: calc(100vw - 16px);
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+        padding: 7px 10px;
+        background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(35, 32, 27, .2);
+        background: color-mix(in srgb, var(--surface) 94%, transparent);
+        -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      }
+      #view-roadmap .rm-connect-bar .rcb-text { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+      #view-roadmap .rm-connect-bar .rcb-btns { display: flex; gap: 5px; }
+      #view-roadmap .rm-connect-bar button {
+        border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+        padding: 7px 12px; min-height: 36px; font-size: 12.5px; font-weight: 500; color: var(--ink-soft); white-space: nowrap;
+      }
+      #view-roadmap .rm-connect-bar button#rmPhaseBtn { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+      @media (prefers-color-scheme: dark) { #view-roadmap .rm-connect-bar button#rmPhaseBtn { color: #1d1216; } }
+      #view-roadmap .rm-connect-bar button:disabled { opacity: .45; }
+      body.connect-on .toast { bottom: calc(216px + env(safe-area-inset-bottom, 0px)); }
+      #view-roadmap .rm-toolbar button#rmConnectBtn[aria-pressed="true"] {
+        background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700;
+      }
+      /* ボタンが増えた分、狭い画面ではツールバー内を横スクロールできるようにする */
+      #view-roadmap .rm-toolbar { overflow-x: auto; scrollbar-width: none; }
+      #view-roadmap .rm-toolbar::-webkit-scrollbar { display: none; }
+      @media (prefers-color-scheme: dark) {
+        #view-roadmap .rm-toolbar button#rmConnectBtn[aria-pressed="true"] { color: #1d1216; }
+      }
+    </style>
   </head>
   <body>
     <div class="wrap">
@@ -1155,14 +1233,24 @@
           <span><span class="swatch solid"></span>実線＝演奏済みから</span>
           <span><span class="swatch dash"></span>点線＝まだ</span>
         </div>
-        <p class="roadmap-help">丸い点をドラッグでつなぐ（もう一度つなぐ／線をタップで外れる）。カードを重ねるとAND、タップで編集。</p></details>
+        <p class="roadmap-help">カードはドラッグで自由に動かせます。つなぐときは「つなぐ」モード：前提にしたいカードをタップで選び（複数選ぶとAND、AND枠のタップでグループごと選択）、対象のカード／AND枠をタップで接続確定。線をタップすると接続を外せます。</p></details>
         <div class="rm-toolbar" role="group" aria-label="ロードマップの表示切替">
           <button type="button" id="rmModeNormal" aria-pressed="true">通常表示</button>
           <button type="button" id="rmModeOverview" aria-pressed="false" aria-label="全体図（時代で色分け）">全体図</button>
+          <button type="button" id="rmFormatBtn">整列</button>
+          <button type="button" id="rmConnectBtn" aria-pressed="false">つなぐ</button>
           <span class="rm-zoom" role="group" aria-label="拡大縮小">
             <button type="button" id="rmZoomOut" aria-label="縮小">−</button>
             <button type="button" id="rmFit">全体を収める</button>
             <button type="button" id="rmZoomIn" aria-label="拡大">＋</button>
+          </span>
+        </div>
+        <div class="rm-connect-bar" id="rmConnectBar" hidden>
+          <span class="rcb-text" id="rmConnectText"></span>
+          <span class="rcb-btns">
+            <button type="button" id="rmPhaseBtn">対象を選ぶ</button>
+            <button type="button" id="rmClearSelBtn">全解除</button>
+            <button type="button" id="rmDoneBtn">完了</button>
           </span>
         </div>
         <div id="overviewWrap" hidden>
@@ -1175,7 +1263,7 @@
         </div>
         <div class="empty" id="roadmapEmpty" hidden>
           <p class="big">まだ曲が登録されていません</p>
-          <p>曲を追加するとカードが並びます。丸い点をドラッグでつなげます。</p>
+          <p>曲を追加するとカードが並びます。「つなぐ」モードで曲と曲を接続できます。</p>
         </div>
         <div class="empty" id="wsEmpty" hidden>
           <p class="big">このワークスペースには曲がインポートされていません</p>
@@ -1563,6 +1651,8 @@
       var GENRES = ["ピアノ", "吹奏楽", "室内楽", "管弦楽", "合唱", "その他"];
       var STATUS_LABEL = { want: "いつか演奏したい", notstarted: "未着手", reading: "譜読み中", finishing: "仕上げ中", done: "演奏済み" };
       var STATUS_KEYS = ["want", "notstarted", "reading", "finishing", "done"];
+      /* ロードマップのカード寸法・余白（描画・全体図・整列で共有） */
+      var RM_NODE_W = 176, RM_GAP_X = 132, RM_GAP_Y = 36, RM_PAD = 38;
       /* 旧データの「練習中（doing）」は「譜読み中」へ引き継ぐ。未知の値は「いつか」にする */
       function normalizeStatus(s) {
         if (s === "doing") return "reading";
@@ -2521,6 +2611,8 @@
 
       /* ================= roadmap overview（全体図） ================= */
       var overviewMode = false;
+      /* つなぐモード（タップ選択式の接続）：pick＝前提を選ぶ段階／target＝対象を選ぶ段階 */
+      var connectMode = false, connectPhase = "pick", connectSel = [];
       var lastLayout = null; /* renderRoadmap が実測した配置 {W,H,pos,outC,inC,pieces,wsSet} */
       function applyRmMode() {
         var has = !!(lastLayout && lastLayout.pieces.length > 0);
@@ -2555,17 +2647,18 @@
           var target = inC[p.id]; if (!target) return;
           var gs = wsCleanGroups(p, L.wsSet);
           var multi = gs.length > 1;
-          gs.forEach(function (g) {
+          gs.forEach(function (g, gi) {
             var members = g.filter(function (id) { return outC[id]; });
             if (members.length === 0) return;
             var isAnd = members.length > 1;
             var color = multi ? "var(--gold)" : (isAnd ? "var(--accent)" : "var(--ink-faint)");
+            var tGi = multi ? { x: target.x, y: target.y + (gi - (gs.length - 1) / 2) * 12 } : target;
             if (isAnd) {
               var maxOutX = Math.max.apply(null, members.map(function (id) { return outC[id].x; }));
-              var J = { x: maxOutX + (target.x - maxOutX) * 0.5, y: target.y };
+              var J = { x: maxOutX + (tGi.x - maxOutX) * 0.5, y: tGi.y };
               var xs = members.map(function (id) { return pos[id].x; }).concat([J.x]);
               var ys = members.map(function (id) { return pos[id].y; }).concat([J.y]);
-              var xe = members.map(function (id) { return pos[id].x + 216; }).concat([J.x]);
+              var xe = members.map(function (id) { return pos[id].x + RM_NODE_W; }).concat([J.x]);
               var ye = members.map(function (id) { return pos[id].y + pos[id].h; }).concat([J.y]);
               var bx = Math.min.apply(null, xs) - 14, by = Math.min.apply(null, ys) - 20;
               var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
@@ -2573,22 +2666,22 @@
               parts.push('<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.5" stroke="var(--accent)" stroke-width="1.5"/>');
               members.forEach(function (id) {
                 var b = bezierD(outC[id], J);
-                parts.push('<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (isDoneId(id) ? "" : ' stroke-dasharray="7 5"') + "/>");
+                parts.push('<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (multi || !isDoneId(id) ? ' stroke-dasharray="7 5"' : "") + "/>");
               });
               var allDone = members.every(isDoneId);
-              var trunk = bezierD(J, target);
-              parts.push('<path d="' + trunk.d + '" fill="none" stroke="' + color + '" stroke-width="3.4"' + (allDone ? "" : ' stroke-dasharray="7 5"') + "/>");
+              var trunk = bezierD(J, tGi);
+              parts.push('<path d="' + trunk.d + '" fill="none" stroke="' + color + '" stroke-width="3.4"' + (multi || !allDone ? ' stroke-dasharray="7 5"' : "") + "/>");
               parts.push('<circle cx="' + J.x + '" cy="' + J.y + '" r="5" fill="' + color + '"/>');
             } else {
-              var b1 = bezierD(outC[members[0]], target);
-              parts.push('<path d="' + b1.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (isDoneId(members[0]) ? "" : ' stroke-dasharray="7 5"') + "/>");
+              var b1 = bezierD(outC[members[0]], tGi);
+              parts.push('<path d="' + b1.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (multi || !isDoneId(members[0]) ? ' stroke-dasharray="7 5"' : "") + "/>");
             }
           });
         });
         /* 曲マーカー：時代の図形＋色、輪はステータス。タップで詳細 */
         L.pieces.forEach(function (p) {
           var pp = pos[p.id]; if (!pp) return;
-          var cx = pp.x + 108, cy = pp.y + pp.h / 2, r = 25;
+          var cx = pp.x + RM_NODE_W / 2, cy = pp.y + pp.h / 2, r = 25;
           var ring;
           if (p.status === "reading") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--gold)" stroke-width="5"/>';
           else if (p.status === "finishing") ring = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 8) + '" fill="none" stroke="var(--accent)" stroke-width="5"/>';
@@ -2694,6 +2787,13 @@
         return '<g><rect x="' + (x - w / 2) + '" y="' + (y - 10) + '" width="' + w + '" height="20" rx="10" fill="' + fill + '"' + stroke + "/>" +
           '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="' + fg + '">' + text + "</text></g>";
       }
+      /* ANDピル：つなぐモードではタップでグループごと選択／対象にできる（data-to/data-members付き） */
+      function andPill(x, y, toId, members) {
+        return '<g class="and-hit" data-to="' + toId + '" data-members="' + members.join(",") + '">' +
+          '<rect x="' + (x - 32) + '" y="' + (y - 16) + '" width="64" height="32" fill="rgba(0,0,0,0)"/>' +
+          '<rect x="' + (x - 21) + '" y="' + (y - 10) + '" width="42" height="20" rx="10" fill="var(--accent)"/>' +
+          '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="var(--surface)">AND</text></g>';
+      }
       function arrowHead(pt, color) {
         /* 矢じりの先端は終点の点の中心そのもの。接線は水平なので真横から差し込む */
         return '<path d="M' + pt.x + " " + pt.y + ' l -11 -5.5 v 11 z" fill="' + color + '"/>';
@@ -2723,7 +2823,7 @@
         $("#roadmapFrame").style.display = pieces.length === 0 ? "none" : "";
         if (pieces.length === 0) { canvas.innerHTML = ""; lastLayout = null; renderOverview(); applyRmMode(); return; }
         var depths = computeDepthsFor(pieces, wsSet);
-        var NODE_W = 216, GAP_X = 148, GAP_Y = 44, PAD = 38;
+        var NODE_W = RM_NODE_W, GAP_X = RM_GAP_X, GAP_Y = RM_GAP_Y, PAD = RM_PAD;
         var byDepth = {};
         pieces.forEach(function (p) { var d = depths[p.id] || 0; (byDepth[d] = byDepth[d] || []).push(p); });
         var depthKeys = Object.keys(byDepth).map(Number).sort(function (a, b) { return a - b; });
@@ -2735,40 +2835,30 @@
         var wsObj = activeWorkspace();
         var savedPos = (wsObj && wsObj.nodePos) || {};
         function colOfX(x) { return Math.max(0, Math.round((x - PAD) / (NODE_W + GAP_X))); }
-        function preqSummary(p) {
-          var gs = wsCleanGroups(p, wsSet);
-          if (gs.length === 0) return "";
-          var parts = gs.map(function (g) {
-            var names = g.map(function (id) { var q = byId(id); return q ? esc(q.title) : ""; }).filter(function (s) { return s; });
-            return names.length > 1 ? "<b>" + names.join(" ＋ ") + "</b>（全部）" : names.join("");
-          });
-          return '<span class="preq">前提：' + parts.join(' <b>または</b> ') + "</span>";
-        }
         var nodes = pieces.map(function (p) {
           var sp = savedPos[p.id];
           var d = sp ? colOfX(sp.x) : (depths[p.id] || 0);
           var x = sp ? sp.x : PAD + d * (NODE_W + GAP_X);
-          var badge, cls = "";
+          var cls = "";
           var wsGs = wsCleanGroups(p, wsSet);
           var wsReady = wsGs.length === 0 || wsGs.some(groupSatisfied);
-          if (p.status === "done") { badge = '<span class="badge done">演奏済み</span>'; cls = " is-done"; }
-          else if (wsReady) { badge = '<span class="badge ready">今取り組める</span>'; cls = " is-ready"; }
-          else { badge = '<span class="badge wait">前提待ち</span>'; }
-          return '<div class="rnode' + cls + " st-" + p.status + '" data-node="' + p.id + '" role="button" tabindex="0" aria-label="' + esc(p.title) + '（押すと編集）" style="left:' + x + 'px;top:0px">' +
-            '<span class="port port-in" data-port="' + p.id + '" aria-hidden="true"></span>' +
-            '<span class="port port-out" data-port="' + p.id + '" aria-hidden="true"></span>' +
-            '<span class="step">STEP ' + (d + 1) + "</span>" +
-            '<span class="t" style="display:block">' + esc(p.title) + "</span>" +
+          if (p.status === "done") { cls = " is-done"; }
+          else if (wsReady) { cls = " is-ready"; }
+          var fp = (STATUS_KEYS.indexOf(p.status) + 1) / STATUS_KEYS.length * 100;
+          var selCls = connectSel.indexOf(p.id) !== -1 ? " sel" : "";
+          return '<div class="rnode' + cls + selCls + " st-" + p.status + '" data-node="' + p.id + '" role="button" tabindex="0" aria-label="' + esc(p.title) + '（押すと編集）" style="left:' + x + 'px;top:0px">' +
             (p.composer ? '<span class="c">' + esc(p.composer) + "</span>" : "") +
-            '<span class="node-meta">' + (p.era ? eraShapeSvg(p.era, 13) + "<span>" + esc(p.era) + "</span>" : "<span></span>") +
+            '<span class="t">' + esc(p.title) + "</span>" +
+            '<span class="node-prog"><span class="np-track"><span class="np-fill st-' + p.status + '" style="width:' + fp + '%"></span></span>' +
               '<span class="st-label st-' + p.status + '">' + STATUS_LABEL[p.status] + "</span></span>" +
-            "<br />" + badge + preqSummary(p) + "</div>";
+            "</div>";
         }).join("");
         canvas.style.width = W + "px";
         canvas.style.height = "400px";
         var keepZoom = rmZoom; /* 実測のため一時的に等倍へ落とすが、描き終わったら元の倍率に戻す（接続を切ってもズームを維持） */
         canvas.style.transform = ""; rmZoom = 1;
-        canvas.innerHTML = nodes + '<svg class="link-layer" id="linkLayer" width="' + W + '" height="400" aria-hidden="true"><path id="dragPath" fill="none" stroke-width="3" stroke-dasharray="6 4" style="display:none"/><circle id="dragStart" r="4" style="display:none"/><circle id="dragDot" r="4.5" style="display:none"/><path id="dragHead" style="display:none"/></svg>';
+        canvas.classList.toggle("connecting", connectMode);
+        canvas.innerHTML = nodes;
         /* 実測して配置する。保存済みの位置があるカードはその場所のまま（接続の付け外しで動かさない）。
            保存位置が無いカードだけ、深さの列に「置き済みの範囲と重ならない」よう積み上げ、
            その位置を保存する。カード間に必ず GAP_Y の隙間を作る */
@@ -2815,18 +2905,13 @@
         canvas.style.width = W + "px";
         var H = maxBottom + PAD;
         canvas.style.height = H + "px";
-        var linkSvg = document.getElementById("linkLayer");
-        if (linkSvg) { linkSvg.setAttribute("width", W); linkSvg.setAttribute("height", H); }
-        /* 点の中心座標（キャンバス左上基準）を実測する */
-        var crect = canvas.getBoundingClientRect();
-        function portCenter(id, clsName) {
-          var el = nodeEl(id); if (!el) return null;
-          var port = el.querySelector(clsName); if (!port) return null;
-          var r = port.getBoundingClientRect();
-          return { x: r.left - crect.left + r.width / 2, y: r.top - crect.top + r.height / 2 };
-        }
+        /* 線のアンカーはカードの右端中央（出）／左端中央（入）を配置座標から決める */
         var outC = {}, inC = {};
-        pieces.forEach(function (p) { outC[p.id] = portCenter(p.id, ".port-out"); inC[p.id] = portCenter(p.id, ".port-in"); });
+        pieces.forEach(function (p) {
+          var pp = pos[p.id]; if (!pp) return;
+          outC[p.id] = { x: pp.x + NODE_W, y: pp.y + pp.h / 2 };
+          inC[p.id] = { x: pp.x, y: pp.y + pp.h / 2 };
+        });
         /* 実線／点線の規則：出発側の曲が演奏済みなら、その曲から次の分岐点
            （ANDの合流点）または相手カードまでは実線。未演奏なら点線。
            ANDの合流点→相手カードの幹は、グループ全曲が演奏済みのときだけ実線。 */
@@ -2842,13 +2927,17 @@
             if (members.length === 0) return;
             var isAnd = members.length > 1;
             var color = multi ? "var(--gold)" : (isAnd ? "var(--accent)" : "var(--ink-faint)");
+            /* ORでは各グループの線が対象の少しずらした点へ個別に届くようにし、常に金色破線で描く。
+               単独接続のときだけ従来規則（演奏済み発＝実線／未演奏＝点線） */
+            var tGi = multi ? { x: target.x, y: target.y + (gi - (gs.length - 1) / 2) * 14 } : target;
+            function dashRule(done) { return multi ? ' stroke-dasharray="7 5"' : dashFor(done); }
             var orYOff = gi % 2 === 0 ? -20 : 26;
             if (isAnd) {
-              /* AND：各曲からの線を合流点で1本に束ねてから相手の点の中心へ */
+              /* AND：各曲からの線を合流点で1本に束ねてから相手カードへ */
               var maxOutX = Math.max.apply(null, members.map(function (id) { return outC[id].x; }));
-              var jx = maxOutX + (target.x - maxOutX) * 0.5;
-              var J = { x: jx, y: target.y };
-              var trunk = bezierD(J, target);
+              var jx = maxOutX + (tGi.x - maxOutX) * 0.5;
+              var J = { x: jx, y: tGi.y };
+              var trunk = bezierD(J, tGi);
               var allDone = members.every(isDoneId);
               /* ANDグループを図形（囲み）でまとめる：メンバーカード群＋合流点を包む面 */
               var xs = members.map(function (id) { return pos[id].x; }).concat([J.x]);
@@ -2859,29 +2948,30 @@
               var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
               var bh = Math.max.apply(null, ye) - Math.min.apply(null, ys) + 34;
               enclosures += '<g><rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.55" stroke="var(--accent)" stroke-width="1.5"/></g>' +
-                edgePill(bx + 42, by, "AND", "and");
+                '<rect class="and-frame-hit" data-to="' + p.id + '" data-members="' + members.join(",") + '" x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="none" stroke="rgba(0,0,0,0)" stroke-width="18"/>' +
+                andPill(bx + 42, by, p.id, members);
               members.forEach(function (id) {
                 var b = bezierD(outC[id], J);
                 var done = isDoneId(id);
                 paths += '<path class="edge-hit" data-from="' + id + '" data-to="' + p.id + '" d="' + b.d + " " + trunk.d + '" fill="none" stroke="transparent" stroke-width="16"><title>クリックで接続を外す</title></path>' +
-                  '<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="' + (done ? 3.2 : 2.4) + '"' + dashFor(done) + "/>";
+                  '<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="' + (done ? 3.2 : 2.4) + '"' + dashRule(done) + "/>";
               });
-              paths += '<path d="' + trunk.d + '" fill="none" stroke="' + color + '" stroke-width="' + (allDone ? 4 : 3.2) + '"' + dashFor(allDone) + "/>" +
+              paths += '<path d="' + trunk.d + '" fill="none" stroke="' + color + '" stroke-width="' + (allDone ? 4 : 3.2) + '"' + dashRule(allDone) + "/>" +
                 '<circle cx="' + J.x + '" cy="' + J.y + '" r="5" fill="' + color + '"/>' +
-                edgePill(J.x, J.y - 22, "AND", "and") +
-                arrowHead(target, color);
+                andPill(J.x, J.y - 22, p.id, members) +
+                arrowHead(tGi, color);
               if (multi) {
-                var midA = bezierMid(J, target, trunk.dx);
+                var midA = bezierMid(J, tGi, trunk.dx);
                 paths += edgePill(midA.x, midA.y + orYOff + 14, "OR", "or");
               }
             } else {
               var done1 = isDoneId(members[0]);
-              var b1 = bezierD(outC[members[0]], target);
+              var b1 = bezierD(outC[members[0]], tGi);
               paths += '<path class="edge-hit" data-from="' + members[0] + '" data-to="' + p.id + '" d="' + b1.d + '" fill="none" stroke="transparent" stroke-width="16"><title>クリックで接続を外す</title></path>' +
-                '<path d="' + b1.d + '" fill="none" stroke="' + color + '" stroke-width="' + (done1 ? 3.2 : 2.4) + '"' + dashFor(done1) + "/>" +
-                arrowHead(target, color);
+                '<path d="' + b1.d + '" fill="none" stroke="' + color + '" stroke-width="' + (done1 ? 3.2 : 2.4) + '"' + dashRule(done1) + "/>" +
+                arrowHead(tGi, color);
               if (multi) {
-                var mid1 = bezierMid(outC[members[0]], target, b1.dx);
+                var mid1 = bezierMid(outC[members[0]], tGi, b1.dx);
                 paths += edgePill(mid1.x, mid1.y + orYOff, "OR", "or");
               }
             }
@@ -2895,26 +2985,15 @@
         applyRmMode();
       }
 
-      /* ================= roadmap: point-to-point drag linking ================= */
-      var dragState = null; /* {type:"link"|"card", fromId, startX, startY, moved, el, ax, ay, hoverId} */
+      /* ================= roadmap: カード移動／つなぐモード／整列 ================= */
+      var dragState = null; /* {fromId, el, startX, startY, startPt, origX, origY, moved, lastX, lastY} */
       var lastDragEnd = 0, lastDragMoved = false;
+      var pendingEdgeRemove = null; /* {from, to}：線タップで切断確認待ち */
+      var pendingFormat = false; /* 整列の確認待ち */
       function nodeEl(id) { return $("#roadmapCanvas").querySelector('[data-node="' + id + '"]'); }
       function hasEdge(fromId, toId) {
         var t = byId(toId); if (!t) return false;
         return cleanGroups(t).some(function (g) { return g.indexOf(fromId) !== -1; });
-      }
-      function connectPieces(fromId, toId) {
-        var from = byId(fromId), to = byId(toId);
-        if (!from || !to || fromId === toId) return;
-        if (hasEdge(fromId, toId)) { removeEdge(fromId, toId); return; }
-        if (hasEdge(toId, fromId)) { removeEdge(toId, fromId); return; } /* 逆向きに引き直しても外れる */
-        var gs = cleanGroups(to);
-        gs.push([fromId]); /* 並列の接続は、その曲だけの新しいグループ＝OR */
-        if (createsCycle(toId, gs)) { toast("その向きにつなぐと循環してしまうため、接続できません"); return; }
-        to.prereqGroups = gs;
-        saveState(); renderAll();
-        buzz([12, 30, 24]); playSfx("connect");
-        toast("「" + from.title + "」→「" + to.title + "」をつなぎました");
       }
       function removeEdge(fromId, toId) {
         var from = byId(fromId), to = byId(toId); if (!to) return;
@@ -2925,105 +3004,170 @@
         playSfx("back");
         toast("「" + (from ? from.title : "") + "」→「" + to.title + "」の接続を外しました");
       }
-      function andMergePieces(dragId, targetId) {
-        if (dragId === targetId) return;
-        var drag = byId(dragId), target = byId(targetId);
-        if (!drag || !target) return;
-        var changed = 0;
-        state.pieces.forEach(function (T) {
-          if (T.id === dragId || T.id === targetId) return;
-          var gs = cleanGroups(T);
-          var giD = -1, giT = -1;
-          gs.forEach(function (g, i) {
-            if (g.indexOf(dragId) !== -1) giD = i;
-            if (g.indexOf(targetId) !== -1) giT = i;
-          });
-          if (giD === -1 && giT === -1) return;
-          if (giD !== -1 && giD === giT) return; /* すでに同じANDグループ */
-          var merged = [];
-          [giD, giT].forEach(function (gi) {
-            if (gi === -1) return;
-            gs[gi].forEach(function (id) { if (merged.indexOf(id) === -1) merged.push(id); });
-          });
-          if (merged.indexOf(dragId) === -1) merged.push(dragId);
-          if (merged.indexOf(targetId) === -1) merged.push(targetId);
-          var rest = gs.filter(function (g, i) { return i !== giD && i !== giT; });
-          var ngs = rest.concat([merged]);
-          if (createsCycle(T.id, ngs)) return;
-          T.prereqGroups = ngs; changed++;
+      function askRemoveEdge(fromId, toId) {
+        var from = byId(fromId), to = byId(toId); if (!to) return;
+        pendingEdgeRemove = { from: fromId, to: toId };
+        pendingDeleteId = null; pendingProfileDeleteId = null; pendingWsDeleteId = null; pendingFormat = false;
+        $("#confirmText").textContent = "「" + (from ? from.title : "") + "」→「" + to.title + "」の接続を外しますか？";
+        $("#confirmYes").textContent = "接続を外す";
+        confirmDlg.showModal();
+      }
+      /* ---------- 整列（フォーマット）：深さ順に列を割り当てて再配置 ---------- */
+      function askFormatRoadmap() {
+        if (workspacePieces().length === 0) { toast("整列できる曲がありません"); return; }
+        pendingFormat = true;
+        pendingDeleteId = null; pendingProfileDeleteId = null; pendingWsDeleteId = null; pendingEdgeRemove = null;
+        $("#confirmText").textContent = "カードを依存関係の深さ順に整列し直します。今の配置は置き換わります。";
+        $("#confirmYes").textContent = "整列する";
+        confirmDlg.showModal();
+      }
+      function formatRoadmap() {
+        var ws = activeWorkspace(); if (!ws) return;
+        var pieces = workspacePieces(); if (pieces.length === 0) return;
+        var set = workspacePieceSet();
+        var depths = computeDepthsFor(pieces, set);
+        var byDepth = {};
+        pieces.forEach(function (p) { var d = depths[p.id] || 0; (byDepth[d] = byDepth[d] || []).push(p); });
+        var heights = {};
+        pieces.forEach(function (p) {
+          var h = 0;
+          if (lastLayout && lastLayout.pos[p.id]) h = lastLayout.pos[p.id].h;
+          if (!h) { var el = nodeEl(p.id); if (el) h = el.offsetHeight; }
+          heights[p.id] = h || 76;
         });
-        if (changed > 0) {
+        var np = {};
+        Object.keys(byDepth).map(Number).sort(function (a, b) { return a - b; }).forEach(function (d) {
+          var col = byDepth[d].slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+          var x = RM_PAD + d * (RM_NODE_W + RM_GAP_X);
+          var y = RM_PAD;
+          col.forEach(function (p) { np[p.id] = { x: x, y: y }; y += heights[p.id] + RM_GAP_Y; });
+        });
+        ws.nodePos = np;
+        saveState();
+        renderRoadmap(); /* ズームは renderRoadmap が保持する */
+        var f = document.getElementById("roadmapFrame");
+        if (f) { f.scrollLeft = 0; f.scrollTop = 0; }
+        buzz(14);
+        toast("整列しました");
+      }
+      /* ---------- つなぐモード（タップ選択式） ---------- */
+      function updateConnectBar() {
+        var bar = document.getElementById("rmConnectBar"); if (!bar) return;
+        bar.hidden = !connectMode;
+        var btn = document.getElementById("rmConnectBtn");
+        if (btn) btn.setAttribute("aria-pressed", connectMode ? "true" : "false");
+        document.body.classList.toggle("connect-on", connectMode);
+        if (!connectMode) return;
+        var txt = document.getElementById("rmConnectText");
+        if (txt) txt.textContent = connectPhase === "pick"
+          ? "前提にする曲をタップ（選択 " + connectSel.length + "曲）"
+          : "対象のカード／AND枠をタップ";
+        var ph = document.getElementById("rmPhaseBtn");
+        if (ph) {
+          ph.textContent = connectPhase === "pick" ? "対象を選ぶ" : "前提選択に戻る";
+          ph.disabled = connectPhase === "pick" && connectSel.length === 0;
+        }
+      }
+      function setConnectMode(on) {
+        connectMode = !!on;
+        connectPhase = "pick";
+        connectSel = [];
+        if (connectMode) { overviewMode = false; applyRmMode(); }
+        updateConnectBar();
+        renderRoadmap();
+        if (connectMode) toast("つなぐモード：前提にしたいカードを選んでください");
+      }
+      function refreshSelMarks() {
+        $("#roadmapCanvas").querySelectorAll(".rnode").forEach(function (n) {
+          n.classList.toggle("sel", connectSel.indexOf(n.getAttribute("data-node")) !== -1);
+        });
+        updateConnectBar();
+      }
+      function connectTapNode(id) {
+        if (connectPhase === "pick") {
+          var i = connectSel.indexOf(id);
+          if (i === -1) connectSel.push(id); else connectSel.splice(i, 1);
+          buzz(8); refreshSelMarks(); return;
+        }
+        if (connectSel.indexOf(id) !== -1) { toast("選択中の曲は対象にできません"); return; }
+        applyConnection([id]);
+      }
+      function connectTapGroup(members) {
+        if (connectPhase === "pick") {
+          var allIn = members.every(function (id) { return connectSel.indexOf(id) !== -1; });
+          members.forEach(function (id) {
+            var i = connectSel.indexOf(id);
+            if (allIn) { if (i !== -1) connectSel.splice(i, 1); }
+            else if (i === -1) connectSel.push(id);
+          });
+          buzz(8); refreshSelMarks(); return;
+        }
+        applyConnection(members.slice());
+      }
+      /* 選択（前提側）を対象へ接続：1枚なら新しいORグループ、複数なら1つのANDグループとして追加。
+         対象がグループのときは全メンバーへ同じ前提グループを追加する（グループ同士の接続） */
+      function applyConnection(targetIds) {
+        if (connectSel.length === 0) return;
+        var sel = connectSel.slice();
+        var added = 0, names = [];
+        targetIds.forEach(function (tid) {
+          var t = byId(tid); if (!t) return;
+          var grp = sel.filter(function (id) { return id !== tid; });
+          if (grp.length === 0) return;
+          var gs = cleanGroups(t);
+          var exists = grp.length === 1
+            ? hasEdge(grp[0], tid)
+            : gs.some(function (g) { return g.length === grp.length && grp.every(function (id) { return g.indexOf(id) !== -1; }); });
+          if (exists) return; /* 既存グループへ混ぜず、重複も作らない */
+          var ngs = gs.concat([grp]); /* 独立したグループとして追加＝ORの選択肢になる */
+          if (createsCycle(tid, ngs)) return;
+          t.prereqGroups = ngs; added++; names.push(t.title);
+        });
+        connectSel = [];
+        connectPhase = "pick";
+        if (added > 0) {
           saveState(); renderAll();
           buzz([12, 30, 24]); playSfx("connect");
-          toast("「" + drag.title + "」と「" + target.title + "」をANDグループにまとめました");
+          toast("「" + names.join("」「") + "」へ接続しました");
         } else {
           renderRoadmap();
-          toast("重ねた2曲が、まだ他の曲の前提になっていません。先にどちらかの点をドラッグして、他の曲へつないでください");
+          toast("すでにつながっているか、循環してしまうため接続できませんでした");
         }
+        updateConnectBar();
       }
       function canvasPoint(ev) {
         var r = $("#roadmapCanvas").getBoundingClientRect();
         var z = rmZoom || 1; /* ズーム時は見た目の座標をキャンバス内部座標へ戻す */
         return { x: (ev.clientX - r.left) / z, y: (ev.clientY - r.top) / z };
       }
-      function dragLayerParts() {
-        var layer = document.getElementById("linkLayer"); if (!layer) return null;
-        var path = document.getElementById("dragPath");
-        var head = document.getElementById("dragHead");
-        var dot = document.getElementById("dragDot");
-        var start = document.getElementById("dragStart");
-        if (!path || !head || !dot || !start) return null;
-        return { layer: layer, path: path, head: head, dot: dot, start: start };
+      /* ドラッグ中の端オートパン：ポインタがフレーム端付近にある間、
+         フレームをその方向へスクロールし続ける。カードの表示位置は
+         canvasPoint（現在のキャンバス矩形から逆算）で毎回合わせるので、
+         スクロールしても指から離れない */
+      var panRaf = null;
+      function updateCardDragVisual() {
+        if (!dragState || !dragState.el) return;
+        var cp = canvasPoint({ clientX: dragState.lastX, clientY: dragState.lastY });
+        var dx = cp.x - dragState.startPt.x, dy = cp.y - dragState.startPt.y;
+        dragState.el.style.transform = "translate(" + dx + "px," + dy + "px)";
       }
-      function drawLinkLine(x1, y1, x2, y2, willRemove, dir, tone) {
-        var parts = dragLayerParts(); if (!parts) return;
-        /* 仮線レイヤーは常にキャンバスの一番手前に置く（他のSVG・カードより前面に出す） */
-        var canvas = $("#roadmapCanvas");
-        if (canvas && canvas.lastElementChild !== parts.layer) canvas.appendChild(parts.layer);
-        var color = willRemove ? "var(--danger)" : (tone === "gold" ? "var(--gold)" : "var(--accent)");
-        /* ドラッグ中の仮線：終点はカーソル／指の位置そのもの。
-           制御点2は「始点→カーソル」の向きの逆側に置くので、曲線の終端は
-           カーソルの方を向いて追従し、矢じりもその接線方向に回る。
-           描画はSVGの中身の差し替えではなく、あらかじめ置いたノードの
-           属性更新で行う（差し替えが描画に反映されないWebView等でも線が出るように）。 */
-        var vx = x2 - x1, vy = y2 - y1;
-        var dist = Math.sqrt(vx * vx + vy * vy) || 1;
-        var ux = vx / dist, uy = vy / dist;
-        var handle = Math.max(28, Math.min(120, dist * 0.38));
-        var exitDir = dir === -1 ? -1 : 1;
-        var c1x = x1 + exitDir * handle, c1y = y1;
-        var c2x = x2 - ux * handle, c2y = y2 - uy * handle;
-        var d = "M" + x1 + " " + y1 + " C " + c1x + " " + c1y + ", " + c2x + " " + c2y + ", " + x2 + " " + y2;
-        var ang = Math.atan2(y2 - c2y, x2 - c2x) * 180 / Math.PI;
-        parts.path.setAttribute("d", d);
-        parts.path.style.stroke = color;
-        parts.path.style.display = "";
-        parts.start.setAttribute("cx", x1); parts.start.setAttribute("cy", y1);
-        parts.start.style.fill = color;
-        parts.start.style.display = "";
-        parts.dot.setAttribute("cx", x2); parts.dot.setAttribute("cy", y2);
-        parts.dot.style.fill = color;
-        parts.dot.style.display = "";
-        parts.head.setAttribute("d", "M" + x2 + " " + y2 + " l -11 -5.5 v 11 z");
-        parts.head.setAttribute("transform", "rotate(" + ang + " " + x2 + " " + y2 + ")");
-        parts.head.style.fill = color;
-        parts.head.style.display = "";
+      function panStep() {
+        panRaf = null;
+        if (!dragState || !dragState.moved) return;
+        var f = document.getElementById("roadmapFrame");
+        if (f) {
+          var r = f.getBoundingClientRect();
+          var M = 56, MAXS = 16, dx = 0, dy = 0;
+          if (dragState.lastX < r.left + M) dx = -Math.max(2, Math.ceil(MAXS * (1 - Math.max(0, dragState.lastX - r.left) / M)));
+          else if (dragState.lastX > r.right - M) dx = Math.max(2, Math.ceil(MAXS * (1 - Math.max(0, r.right - dragState.lastX) / M)));
+          if (dragState.lastY < r.top + M) dy = -Math.max(2, Math.ceil(MAXS * (1 - Math.max(0, dragState.lastY - r.top) / M)));
+          else if (dragState.lastY > r.bottom - M) dy = Math.max(2, Math.ceil(MAXS * (1 - Math.max(0, r.bottom - dragState.lastY) / M)));
+          if (dx || dy) { f.scrollLeft += dx; f.scrollTop += dy; updateCardDragVisual(); }
+        }
+        panRaf = requestAnimationFrame(panStep);
       }
-      function clearLinkLine() {
-        var parts = dragLayerParts(); if (!parts) return;
-        [parts.path, parts.head, parts.dot, parts.start].forEach(function (el) { el.style.display = "none"; });
-      }
-      function clearDropMarks() {
-        $("#roadmapCanvas").querySelectorAll(".rnode.drop-ok, .rnode.drop-remove, .rnode.stack-target, .rnode.link-source").forEach(function (n) {
-          n.classList.remove("drop-ok", "drop-remove", "stack-target", "link-source");
-        });
-      }
-      function nodeFromPoint(ev, excludeEl) {
-        var under = document.elementFromPoint(ev.clientX, ev.clientY);
-        if (!under || (excludeEl && under === excludeEl)) return null;
-        var node = under.closest ? under.closest("[data-node]") : null;
-        return node || null;
-      }
+      function startPan() { if (panRaf == null) panRaf = requestAnimationFrame(panStep); }
+      function stopPan() { if (panRaf != null) { cancelAnimationFrame(panRaf); panRaf = null; } }
       function resetDragEl(ds) {
         if (ds && ds.el) { ds.el.style.transform = ""; ds.el.style.pointerEvents = ""; ds.el.classList.remove("dragging"); }
       }
@@ -3211,7 +3355,9 @@
         pendingDeleteId = id;
         pendingProfileDeleteId = null;
         pendingWsDeleteId = null;
+        pendingEdgeRemove = null; pendingFormat = false;
         $("#confirmText").textContent = "「" + p.title + "」を削除します。この曲を前提にしている曲からは、前提の指定も外れます。";
+        $("#confirmYes").textContent = "削除する";
         confirmDlg.showModal();
       }
       function askDeleteWorkspace() {
@@ -3219,7 +3365,9 @@
         pendingDeleteId = null;
         pendingProfileDeleteId = null;
         pendingWsDeleteId = ws.id;
+        pendingEdgeRemove = null; pendingFormat = false;
         $("#confirmText").textContent = "ワークスペース「" + ws.name + "」を削除します。曲そのものは削除されず、曲一覧に残ります。";
+        $("#confirmYes").textContent = "削除する";
         confirmDlg.showModal();
       }
       function deleteWorkspace(id) {
@@ -3238,9 +3386,11 @@
         pendingDeleteId = null;
         pendingProfileDeleteId = prof.id;
         pendingWsDeleteId = null;
+        pendingEdgeRemove = null; pendingFormat = false;
         var d = store.data[prof.id];
         var n = d && Array.isArray(d.pieces) ? d.pieces.length : 0;
         $("#confirmText").textContent = "プロフィール「" + prof.name + "」を削除します。そのプロフィールの曲リスト（" + n + "曲）もすべて削除され、元に戻せません。";
+        $("#confirmYes").textContent = "削除する";
         confirmDlg.showModal();
       }
 
@@ -3405,6 +3555,16 @@
       $("#rmZoomIn").addEventListener("click", function () { setRmZoom(rmZoom * 1.25); });
       $("#rmZoomOut").addEventListener("click", function () { setRmZoom(rmZoom / 1.25); });
       $("#rmFit").addEventListener("click", function () { fitRoadmap(); });
+      $("#rmFormatBtn").addEventListener("click", function () { askFormatRoadmap(); });
+      $("#rmConnectBtn").addEventListener("click", function () { setConnectMode(!connectMode); });
+      $("#rmPhaseBtn").addEventListener("click", function () {
+        if (!connectMode) return;
+        if (connectPhase === "pick" && connectSel.length === 0) return;
+        connectPhase = connectPhase === "pick" ? "target" : "pick";
+        buzz(8); updateConnectBar();
+      });
+      $("#rmClearSelBtn").addEventListener("click", function () { connectSel = []; connectPhase = "pick"; refreshSelMarks(); });
+      $("#rmDoneBtn").addEventListener("click", function () { setConnectMode(false); });
       $("#overviewSvgWrap").addEventListener("click", function (ev) {
         var g = ev.target.closest ? ev.target.closest("[data-ov]") : null;
         if (g) { playSfx("tap"); openPieceDetail(g.getAttribute("data-ov")); }
@@ -3462,112 +3622,85 @@
         statusFeedback(p, oldStatus);
       });
       $("#roadmapCanvas").addEventListener("pointerdown", function (ev) {
-        var port = ev.target.closest ? ev.target.closest("[data-port]") : null;
-        var r = $("#roadmapCanvas").getBoundingClientRect();
-        if (port) {
-          ev.preventDefault(); ev.stopPropagation();
-          var pr = port.getBoundingClientRect();
-          dragState = {
-            type: "link", fromId: port.getAttribute("data-port"), el: null,
-            startX: ev.clientX, startY: ev.clientY, moved: false, hoverId: null,
-            dir: port.classList.contains("port-in") ? -1 : 1,
-            ax: (pr.left - r.left + pr.width / 2) / (rmZoom || 1), ay: (pr.top - r.top + pr.height / 2) / (rmZoom || 1)
-          };
-          /* ポインタを捕まえて、指が他の要素の上に移っても move/up を受け続ける */
-          if (port.setPointerCapture) { try { port.setPointerCapture(ev.pointerId); } catch (err) {} }
-          /* ドラッグ開始直後から、点の中心から現在のポインタ位置へ仮線を出す */
-          var startPt = canvasPoint(ev);
-          drawLinkLine(dragState.ax, dragState.ay, startPt.x, startPt.y, false, dragState.dir);
-          var src = nodeEl(dragState.fromId); if (src) src.classList.add("link-source");
-          var cvLink = $("#roadmapCanvas"); if (cvLink) cvLink.classList.add("linking");
-          return;
-        }
+        if (connectMode) return; /* つなぐモード中はカード移動ドラッグ無効（タップ選択のみ） */
         var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
-        if (node) {
-          var outP = node.querySelector(".port-out");
-          var orr = outP ? outP.getBoundingClientRect() : node.getBoundingClientRect();
-          dragState = {
-            type: "card", fromId: node.getAttribute("data-node"), el: node,
-            startX: ev.clientX, startY: ev.clientY, moved: false, hoverId: null,
-            ax: (orr.left - r.left + orr.width / 2) / (rmZoom || 1), ay: (orr.top - r.top + orr.height / 2) / (rmZoom || 1)
-          };
-        }
+        if (!node) return;
+        var id = node.getAttribute("data-node");
+        var orig = (lastLayout && lastLayout.pos[id]) ? lastLayout.pos[id] : null;
+        dragState = {
+          fromId: id, el: node,
+          startX: ev.clientX, startY: ev.clientY, lastX: ev.clientX, lastY: ev.clientY,
+          startPt: canvasPoint(ev),
+          origX: orig ? orig.x : (parseFloat(node.style.left) || 0),
+          origY: orig ? orig.y : (parseFloat(node.style.top) || 0),
+          moved: false
+        };
       });
       window.addEventListener("pointermove", function (ev) {
         if (!dragState) return;
+        dragState.lastX = ev.clientX; dragState.lastY = ev.clientY;
         var dx = ev.clientX - dragState.startX, dy = ev.clientY - dragState.startY;
-        if (!dragState.moved && Math.sqrt(dx * dx + dy * dy) < (dragState.type === "link" ? 3 : 6)) return;
-        if (!dragState.moved && dragState.type === "card" && dragState.el) dragState.el.style.pointerEvents = "none";
-        dragState.moved = true;
-        if (dragState.type === "link") {
-          ev.preventDefault();
-          var node = nodeFromPoint(ev, null);
-          var hid = node ? node.getAttribute("data-node") : null;
-          var willRemove = !!(hid && hid !== dragState.fromId && (hasEdge(dragState.fromId, hid) || hasEdge(hid, dragState.fromId)));
-          var pt = canvasPoint(ev);
-          drawLinkLine(dragState.ax, dragState.ay, pt.x, pt.y, willRemove, dragState.dir);
-          if (hid !== dragState.hoverId) {
-            dragState.hoverId = hid;
-            clearDropMarks();
-            var src = nodeEl(dragState.fromId); if (src) src.classList.add("link-source");
-            if (node && hid !== dragState.fromId) node.classList.add(willRemove ? "drop-remove" : "drop-ok");
-          }
-        } else if (dragState.type === "card" && dragState.el) {
-          ev.preventDefault();
-          var zdx = dx / (rmZoom || 1), zdy = dy / (rmZoom || 1);
-          dragState.el.style.transform = "translate(" + zdx + "px," + zdy + "px)";
-          dragState.el.classList.add("dragging");
-          /* カード自体のドラッグ中も、出口の点（カードと一緒に動く）からポインタへ金色のガイド線を出す */
-          var cpt = canvasPoint(ev);
-          drawLinkLine(dragState.ax + zdx, dragState.ay + zdy, cpt.x, cpt.y, false, 1, "gold");
-          var node2 = nodeFromPoint(ev, dragState.el);
-          var hid2 = node2 ? node2.getAttribute("data-node") : null;
-          if (hid2 !== dragState.hoverId) {
-            dragState.hoverId = hid2;
-            $("#roadmapCanvas").querySelectorAll(".rnode.stack-target").forEach(function (n) { n.classList.remove("stack-target"); });
-            if (node2 && hid2 !== dragState.fromId) node2.classList.add("stack-target");
-          }
-        }
+        if (!dragState.moved && Math.sqrt(dx * dx + dy * dy) < 6) return;
+        if (!dragState.moved) { dragState.moved = true; startPan(); }
+        ev.preventDefault();
+        dragState.el.classList.add("dragging");
+        updateCardDragVisual();
       }, { passive: false });
-      /* ドラッグ中に画面やキャンバスのスクロールへ奪われて仮線が消えないよう、ドラッグ中のタッチ移動は止める */
+      /* ドラッグ中に画面スクロールへ奪われないよう、ドラッグ中のタッチ移動は止める */
       document.addEventListener("touchmove", function (ev) { if (dragState) ev.preventDefault(); }, { passive: false });
       window.addEventListener("pointerup", function (ev) {
         if (!dragState) return;
         var ds = dragState; dragState = null;
-        var cvUp = $("#roadmapCanvas"); if (cvUp) cvUp.classList.remove("linking");
+        stopPan();
         lastDragEnd = Date.now(); lastDragMoved = ds.moved;
-        clearLinkLine(); clearDropMarks();
         if (!ds.moved) { resetDragEl(ds); return; }
-        if (ds.type === "link") {
-          var node = nodeFromPoint(ev, null);
-          var tid = node ? node.getAttribute("data-node") : null;
-          if (tid && tid !== ds.fromId) connectPieces(ds.fromId, tid);
-        } else {
-          var node2 = nodeFromPoint(ev, ds.el);
-          var tid2 = node2 ? node2.getAttribute("data-node") : null;
-          resetDragEl(ds);
-          if (tid2 && tid2 !== ds.fromId) andMergePieces(ds.fromId, tid2);
-          else renderRoadmap();
+        /* 離した位置を nodePos に保存して確定する（再描画や接続の付け外しでも保持される） */
+        var cp = canvasPoint(ev);
+        var nx = Math.max(4, Math.round(ds.origX + (cp.x - ds.startPt.x)));
+        var ny = Math.max(4, Math.round(ds.origY + (cp.y - ds.startPt.y)));
+        resetDragEl(ds);
+        var ws = activeWorkspace();
+        if (ws) {
+          if (!ws.nodePos) ws.nodePos = {};
+          ws.nodePos[ds.fromId] = { x: nx, y: ny };
+          saveState();
         }
+        buzz(10);
+        renderRoadmap();
       });
       window.addEventListener("pointercancel", function () {
         if (!dragState) return;
+        stopPan();
         resetDragEl(dragState);
         dragState = null;
-        var cvCancel = $("#roadmapCanvas"); if (cvCancel) cvCancel.classList.remove("linking");
-        clearLinkLine(); clearDropMarks();
+        renderRoadmap();
       });
       $("#roadmapCanvas").addEventListener("click", function (ev) {
-        if (lastDragMoved && Date.now() - lastDragEnd < 300) return; /* ドラッグ直後のクリックは編集を開かない */
+        if (lastDragMoved && Date.now() - lastDragEnd < 300) return; /* ドラッグ直後のクリックは無視 */
         var hit = ev.target.closest ? ev.target.closest(".edge-hit") : null;
-        if (hit) { removeEdge(hit.getAttribute("data-from"), hit.getAttribute("data-to")); return; }
+        if (hit) { askRemoveEdge(hit.getAttribute("data-from"), hit.getAttribute("data-to")); return; }
+        if (connectMode) {
+          var g = ev.target.closest ? (ev.target.closest(".and-hit") || ev.target.closest(".and-frame-hit")) : null;
+          if (g) {
+            var members = (g.getAttribute("data-members") || "").split(",").filter(function (s) { return s; });
+            if (members.length) connectTapGroup(members);
+            return;
+          }
+          var cnode = ev.target.closest ? ev.target.closest("[data-node]") : null;
+          if (cnode) connectTapNode(cnode.getAttribute("data-node"));
+          return;
+        }
         var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
         if (node) openEditor(node.dataset.node);
       });
       $("#roadmapCanvas").addEventListener("keydown", function (ev) {
         if (ev.key !== "Enter" && ev.key !== " ") return;
         var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
-        if (node && ev.target === node) { ev.preventDefault(); openEditor(node.dataset.node); }
+        if (node && ev.target === node) {
+          ev.preventDefault();
+          if (connectMode) connectTapNode(node.getAttribute("data-node"));
+          else openEditor(node.dataset.node);
+        }
       });
 
       $("#starRow").addEventListener("click", function (ev) {
@@ -3611,8 +3744,21 @@
       $("#editForm").addEventListener("submit", saveFromForm);
       $("#cancelBtn").addEventListener("click", closeEditor);
       $("#deleteBtn").addEventListener("click", function () { closeEditor(); askDelete(editingId); });
-      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; pendingProfileDeleteId = null; pendingWsDeleteId = null; });
+      $("#confirmNo").addEventListener("click", function () { confirmDlg.close(); pendingDeleteId = null; pendingProfileDeleteId = null; pendingWsDeleteId = null; pendingEdgeRemove = null; pendingFormat = false; });
       $("#confirmYes").addEventListener("click", function () {
+        if (pendingEdgeRemove) {
+          var er = pendingEdgeRemove;
+          pendingEdgeRemove = null;
+          confirmDlg.close();
+          removeEdge(er.from, er.to);
+          return;
+        }
+        if (pendingFormat) {
+          pendingFormat = false;
+          confirmDlg.close();
+          formatRoadmap();
+          return;
+        }
         if (pendingWsDeleteId) {
           var wsTargetId = pendingWsDeleteId;
           pendingWsDeleteId = null;
