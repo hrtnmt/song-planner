@@ -1279,7 +1279,11 @@
           JSONを読み込み
         </button>
         <input type="file" id="importFile" accept="application/json,.json" hidden />
-        <p class="note">データはプロフィールごとにこのブラウザ内へ保存。書き出し／読み込みは表示中のプロフィールが対象です。</p>
+        <button type="button" class="btn small" id="sampleBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>
+          サンプルを読み込む
+        </button>
+        <p class="note">データはプロフィールごとにこのブラウザ内へ保存。書き出し／読み込みは表示中のプロフィールが対象です。サンプルは新しいプロフィールとして追加され、今のプロフィールは上書きされません。</p>
       </div>
 
       <div class="cal-guide" aria-label="カレンダー通知の使い方">
@@ -1512,6 +1516,17 @@
       <div class="dlg-foot">
         <button type="button" class="btn" id="confirmNo">やめる</button>
         <button type="button" class="btn danger" id="confirmYes">削除する</button>
+      </div>
+    </dialog>
+
+    <dialog id="sampleDlg">
+      <div class="dlg-body">
+        <h2 style="font-size:17px">サンプルで置き換えますか？</h2>
+        <p id="sampleDlgText" style="margin:0 0 6px"></p>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn" id="sampleNo">やめる</button>
+        <button type="button" class="btn danger" id="sampleYes">置き換える</button>
       </div>
     </dialog>
 
@@ -3739,6 +3754,92 @@
           ev.target.value = "";
         };
         reader.readAsText(file);
+      });
+
+      /* ---- サンプル（Sample.json）を新しいプロフィールとして読み込む ----
+         Sample.json は index.html と同じ場所に置かれた、このアプリの書き出し形式のファイル。
+         既存プロフィールは上書きしない。同名プロフィールがある場合だけ確認して置き換える。 */
+      function profileDataFromJson(data) {
+        var meta = Array.isArray(data) ? {} : (data || {});
+        if (!Array.isArray(meta.pieces)) throw new Error("bad format");
+        var pieces = meta.pieces.map(function (src) {
+          var p = Object.assign({}, src || {});
+          if (!p.id) p.id = uid();
+          if (!p.createdAt) p.createdAt = Date.now();
+          p.want = [1, 2, 3].indexOf(p.want) !== -1 ? p.want : 1;
+          p.concerts = Array.isArray(p.concerts) ? p.concerts : [];
+          p.prereqGroups = Array.isArray(p.prereqGroups) ? p.prereqGroups : [];
+          return p;
+        });
+        return normalizeData({
+          pieces: pieces,
+          settings: meta.settings,
+          workspaces: meta.workspaces,
+          activeWorkspaceId: meta.activeWorkspaceId
+        });
+      }
+      var pendingSample = null;
+      function finishSampleLoad(name, nd, replaceId) {
+        if (replaceId) {
+          store.data[replaceId] = nd;
+          saveStore();
+          if (replaceId === store.activeId) {
+            state = store.data[replaceId];
+            syncNotifySelect();
+            renderProfileUI(); renderAll();
+          } else {
+            switchToProfile(replaceId);
+          }
+          toast("プロフィール「" + name + "」をサンプルの内容で置き換えました（" + nd.pieces.length + "曲）");
+        } else {
+          var id = uid();
+          store.profiles.push({ id: id, name: name, pinHash: "" });
+          store.data[id] = nd;
+          saveStore();
+          switchToProfile(id);
+          toast("サンプルをプロフィール「" + name + "」として追加しました（" + nd.pieces.length + "曲）");
+        }
+      }
+      var sampleBtn = $("#sampleBtn");
+      if (sampleBtn) sampleBtn.addEventListener("click", function () {
+        if (typeof fetch !== "function") { toast("サンプルを読み込めませんでした"); return; }
+        sampleBtn.disabled = true;
+        fetch("Sample.json").then(function (res) {
+          if (!res.ok) throw new Error("not found");
+          return res.json();
+        }).then(function (data) {
+          sampleBtn.disabled = false;
+          var nd;
+          try { nd = profileDataFromJson(data); }
+          catch (e) { toast("サンプルを読み込めませんでした：JSONの形式が違うようです"); return; }
+          var meta = Array.isArray(data) ? {} : (data || {});
+          var name = (typeof meta.profileName === "string" && meta.profileName.trim()) ? meta.profileName.trim() : "Sample";
+          var existing = store.profiles.find(function (p) { return p.name === name; });
+          var md = document.getElementById("moreDlg");
+          if (existing) {
+            pendingSample = { id: existing.id, name: name, data: nd };
+            var cur = store.data[existing.id];
+            var curN = cur && Array.isArray(cur.pieces) ? cur.pieces.length : 0;
+            $("#sampleDlgText").textContent = "プロフィール「" + name + "」は既にあります（現在 " + curN + "曲）。サンプルの内容（" + nd.pieces.length + "曲）で置き換えますか？置き換えると今の「" + name + "」の内容は元に戻せません。他のプロフィールには影響しません。";
+            if (md && md.open) md.close();
+            document.getElementById("sampleDlg").showModal();
+            return;
+          }
+          if (md && md.open) md.close();
+          finishSampleLoad(name, nd, null);
+        }).catch(function () {
+          sampleBtn.disabled = false;
+          toast("サンプルを読み込めませんでした（Sample.json が見つかりません）");
+        });
+      });
+      $("#sampleNo").addEventListener("click", function () {
+        pendingSample = null;
+        document.getElementById("sampleDlg").close();
+      });
+      $("#sampleYes").addEventListener("click", function () {
+        var ps = pendingSample; pendingSample = null;
+        document.getElementById("sampleDlg").close();
+        if (ps) finishSampleLoad(ps.name, ps.data, ps.id);
       });
 
       renderProfileUI();
