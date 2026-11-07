@@ -1,0 +1,16 @@
+{
+  "name": "演奏したい曲リスト",
+  "short_name": "曲リスト",
+  "description": "演奏したい曲を登録して、ロードマップと日程で見通すためのツール",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f4ef",
+  "theme_color": "#16181d",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -6,6 +6,18 @@
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="data:," />
     <title>演奏したい曲リスト Pages版</title>
+    <!-- ===== PWA（Androidアプリ化・方式1）: manifest / アイコン / 起動メタ =====
+         manifest.webmanifest・sw.js・アイコン画像はデプロイ側（gh-pages）で
+         このページと同じ階層に別ファイルとして配置する。 -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="演奏したい曲リスト" />
+    <meta name="application-name" content="演奏したい曲リスト" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -1105,10 +1117,13 @@
       }
       @media (prefers-color-scheme: dark) { .rnode.sel::after { color: #1d1216; } }
       .roadmap-canvas.connecting .rnode { cursor: pointer; }
-      /* AND枠・ANDピルの当たり判定は、つなぐモードの間だけ有効 */
-      .and-hit, .and-frame-hit { pointer-events: none; }
+      /* AND枠・ANDピル・ORピルの当たり判定は、つなぐモードの間だけ有効。
+         線の当たり判定はつなぐモード中だけ無効化し、選択タップを横取りさせない */
+      .and-hit, .and-frame-hit, .or-hit { pointer-events: none; }
       .roadmap-canvas.connecting .and-hit { pointer-events: all; cursor: pointer; }
-      .roadmap-canvas.connecting .and-frame-hit { pointer-events: stroke; cursor: pointer; }
+      .roadmap-canvas.connecting .and-frame-hit { pointer-events: all; cursor: pointer; }
+      .roadmap-canvas.connecting .or-hit { pointer-events: all; cursor: pointer; }
+      .roadmap-canvas.connecting .edge-hit { pointer-events: none; }
       /* つなぐモードの操作バー：下部ツールバーの上に浮かぶ */
       #view-roadmap .rm-connect-bar {
         position: absolute; z-index: 36; left: 50%; transform: translateX(-50%);
@@ -1233,7 +1248,7 @@
           <span><span class="swatch solid"></span>実線＝演奏済みから</span>
           <span><span class="swatch dash"></span>点線＝まだ</span>
         </div>
-        <p class="roadmap-help">カードはドラッグで自由に動かせます。つなぐときは「つなぐ」モード：前提にしたいカードをタップで選び（複数選ぶとAND、AND枠のタップでグループごと選択）、対象のカード／AND枠をタップで接続確定。線をタップすると接続を外せます。</p></details>
+        <p class="roadmap-help">カードはドラッグで自由に動かせます。つなぐときは「つなぐ」モード：前提にしたいカードをタップで選び（複数選ぶとAND、AND枠・ANDピルのタップでANDグループごと、ORピルのタップでORグループ一式をそのまま選択）、対象のカード／AND枠／ORピルをタップで接続確定（ORピルが対象のときは、その曲のOR候補として追加されます）。接続を外すときは、通常モードで線をタップします。</p></details>
         <div class="rm-toolbar" role="group" aria-label="ロードマップの表示切替">
           <button type="button" id="rmModeNormal" aria-pressed="true">通常表示</button>
           <button type="button" id="rmModeOverview" aria-pressed="false" aria-label="全体図（時代で色分け）">全体図</button>
@@ -1648,7 +1663,7 @@
       var LS_KEY_V1 = "song-planner-pages:v1";
       var ERAS = ["バロック", "古典派", "ロマン派", "近現代", "その他"];
       var ERA_ORDER = { "バロック": 0, "古典派": 1, "ロマン派": 2, "近現代": 3, "その他": 4, "": 5 };
-      var GENRES = ["ピアノ", "吹奏楽", "室内楽", "管弦楽", "合唱", "その他"];
+      var GENRES = ["ピアノ", "器楽ソロ", "吹奏楽", "室内楽", "管弦楽", "合唱", "その他"];
       var STATUS_LABEL = { want: "いつか演奏したい", notstarted: "未着手", reading: "譜読み中", finishing: "仕上げ中", done: "演奏済み" };
       var STATUS_KEYS = ["want", "notstarted", "reading", "finishing", "done"];
       /* ロードマップのカード寸法・余白（描画・全体図・整列で共有） */
@@ -2611,8 +2626,10 @@
 
       /* ================= roadmap overview（全体図） ================= */
       var overviewMode = false;
-      /* つなぐモード（タップ選択式の接続）：pick＝前提を選ぶ段階／target＝対象を選ぶ段階 */
-      var connectMode = false, connectPhase = "pick", connectSel = [];
+      /* つなぐモード（タップ選択式の接続）：pick＝前提を選ぶ段階／target＝対象を選ぶ段階。
+         connectSel＝個別タップしたカード（まとめて1つのANDグループになる）、
+         connectBundles＝ピル／枠から丸ごと選んだグループの束（ORピルは複数グループの束） */
+      var connectMode = false, connectPhase = "pick", connectSel = [], connectBundles = [];
       var lastLayout = null; /* renderRoadmap が実測した配置 {W,H,pos,outC,inC,pieces,wsSet} */
       function applyRmMode() {
         var has = !!(lastLayout && lastLayout.pieces.length > 0);
@@ -2794,6 +2811,16 @@
           '<rect x="' + (x - 21) + '" y="' + (y - 10) + '" width="42" height="20" rx="10" fill="var(--accent)"/>' +
           '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="var(--surface)">AND</text></g>';
       }
+      /* ORピル：その曲の前提グループ一式（ORの集合）を表す。つなぐモードではタップで
+         「一式をそのまま前提として選択」／「その曲へOR候補として追加」の対象にできる。
+         data-groups はグループを「|」、メンバーを「,」で区切った符号化 */
+      function orPill(x, y, toId, groups) {
+        var enc = groups.map(function (g) { return g.join(","); }).join("|");
+        return '<g class="or-hit" data-to="' + toId + '" data-groups="' + enc + '">' +
+          '<rect x="' + (x - 32) + '" y="' + (y - 16) + '" width="64" height="32" fill="rgba(0,0,0,0)"/>' +
+          '<rect x="' + (x - 18) + '" y="' + (y - 10) + '" width="36" height="20" rx="10" fill="var(--gold-soft)" stroke="var(--gold)" stroke-width="1.5"/>' +
+          '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="var(--gold)">OR</text></g>';
+      }
       function arrowHead(pt, color) {
         /* 矢じりの先端は終点の点の中心そのもの。接線は水平なので真横から差し込む */
         return '<path d="M' + pt.x + " " + pt.y + ' l -11 -5.5 v 11 z" fill="' + color + '"/>';
@@ -2835,6 +2862,7 @@
         var wsObj = activeWorkspace();
         var savedPos = (wsObj && wsObj.nodePos) || {};
         function colOfX(x) { return Math.max(0, Math.round((x - PAD) / (NODE_W + GAP_X))); }
+        var selSet = selectedIdSet();
         var nodes = pieces.map(function (p) {
           var sp = savedPos[p.id];
           var d = sp ? colOfX(sp.x) : (depths[p.id] || 0);
@@ -2845,7 +2873,7 @@
           if (p.status === "done") { cls = " is-done"; }
           else if (wsReady) { cls = " is-ready"; }
           var fp = (STATUS_KEYS.indexOf(p.status) + 1) / STATUS_KEYS.length * 100;
-          var selCls = connectSel.indexOf(p.id) !== -1 ? " sel" : "";
+          var selCls = selSet[p.id] ? " sel" : "";
           return '<div class="rnode' + cls + selCls + " st-" + p.status + '" data-node="' + p.id + '" role="button" tabindex="0" aria-label="' + esc(p.title) + '（押すと編集）" style="left:' + x + 'px;top:0px">' +
             (p.composer ? '<span class="c">' + esc(p.composer) + "</span>" : "") +
             '<span class="t">' + esc(p.title) + "</span>" +
@@ -2922,6 +2950,8 @@
           var target = inC[p.id]; if (!target) return;
           var gs = wsCleanGroups(p, wsSet);
           var multi = gs.length > 1; /* グループが複数＝OR（どれか1グループでよい） */
+          /* ORピルに持たせる「前提グループ一式」：描画中のグループをそのまま使う */
+          var orGroups = gs.map(function (g) { return g.filter(function (id) { return outC[id]; }); }).filter(function (g) { return g.length > 0; });
           gs.forEach(function (g, gi) {
             var members = g.filter(function (id) { return outC[id]; });
             if (members.length === 0) return;
@@ -2948,7 +2978,7 @@
               var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
               var bh = Math.max.apply(null, ye) - Math.min.apply(null, ys) + 34;
               enclosures += '<g><rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.55" stroke="var(--accent)" stroke-width="1.5"/></g>' +
-                '<rect class="and-frame-hit" data-to="' + p.id + '" data-members="' + members.join(",") + '" x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="none" stroke="rgba(0,0,0,0)" stroke-width="18"/>' +
+                '<rect class="and-frame-hit" data-to="' + p.id + '" data-members="' + members.join(",") + '" x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="rgba(0,0,0,0)" stroke="rgba(0,0,0,0)" stroke-width="18"/>' +
                 andPill(bx + 42, by, p.id, members);
               members.forEach(function (id) {
                 var b = bezierD(outC[id], J);
@@ -2962,7 +2992,7 @@
                 arrowHead(tGi, color);
               if (multi) {
                 var midA = bezierMid(J, tGi, trunk.dx);
-                paths += edgePill(midA.x, midA.y + orYOff + 14, "OR", "or");
+                paths += orPill(midA.x, midA.y + orYOff + 14, p.id, orGroups);
               }
             } else {
               var done1 = isDoneId(members[0]);
@@ -2972,7 +3002,7 @@
                 arrowHead(tGi, color);
               if (multi) {
                 var mid1 = bezierMid(outC[members[0]], tGi, b1.dx);
-                paths += edgePill(mid1.x, mid1.y + orYOff, "OR", "or");
+                paths += orPill(mid1.x, mid1.y + orYOff, p.id, orGroups);
               }
             }
           });
@@ -3051,6 +3081,33 @@
         toast("整列しました");
       }
       /* ---------- つなぐモード（タップ選択式） ---------- */
+      /* 選択中とみなす曲IDの集合：個別選択（connectSel）＋束（connectBundles）の中身すべて */
+      function selectedIdSet() {
+        var set = {};
+        connectSel.forEach(function (id) { set[id] = true; });
+        connectBundles.forEach(function (b) { b.groups.forEach(function (g) { g.forEach(function (id) { set[id] = true; }); }); });
+        return set;
+      }
+      function selectedCount() { return Object.keys(selectedIdSet()).length; }
+      /* グループの束の同一判定キー（順序に依存しない） */
+      function bundleKey(groups) {
+        return groups.map(function (g) { return g.slice().sort().join(","); }).sort().join("|");
+      }
+      /* 前提として適用する単位の一覧：個別選択は1つのANDグループにまとめ、
+         束はグループ構成を保ったまま（ORピルで選んだOR一式は選択肢のまま移る） */
+      function selectedUnits() {
+        var units = [];
+        if (connectSel.length) units.push(connectSel.slice());
+        connectBundles.forEach(function (b) { b.groups.forEach(function (g) { units.push(g.slice()); }); });
+        return units;
+      }
+      function toggleBundle(groups) {
+        var key = bundleKey(groups), i = -1;
+        connectBundles.forEach(function (b, bi) { if (b.key === key) i = bi; });
+        if (i === -1) connectBundles.push({ key: key, groups: groups.map(function (g) { return g.slice(); }) });
+        else connectBundles.splice(i, 1);
+        buzz(8); refreshSelMarks();
+      }
       function updateConnectBar() {
         var bar = document.getElementById("rmConnectBar"); if (!bar) return;
         bar.hidden = !connectMode;
@@ -3060,26 +3117,28 @@
         if (!connectMode) return;
         var txt = document.getElementById("rmConnectText");
         if (txt) txt.textContent = connectPhase === "pick"
-          ? "前提にする曲をタップ（選択 " + connectSel.length + "曲）"
-          : "対象のカード／AND枠をタップ";
+          ? "前提にする曲／グループをタップ（選択 " + selectedCount() + "曲）"
+          : "対象のカード／AND枠／ORピルをタップ";
         var ph = document.getElementById("rmPhaseBtn");
         if (ph) {
           ph.textContent = connectPhase === "pick" ? "対象を選ぶ" : "前提選択に戻る";
-          ph.disabled = connectPhase === "pick" && connectSel.length === 0;
+          ph.disabled = connectPhase === "pick" && selectedCount() === 0;
         }
       }
       function setConnectMode(on) {
         connectMode = !!on;
         connectPhase = "pick";
         connectSel = [];
+        connectBundles = [];
         if (connectMode) { overviewMode = false; applyRmMode(); }
         updateConnectBar();
         renderRoadmap();
         if (connectMode) toast("つなぐモード：前提にしたいカードを選んでください");
       }
       function refreshSelMarks() {
+        var set = selectedIdSet();
         $("#roadmapCanvas").querySelectorAll(".rnode").forEach(function (n) {
-          n.classList.toggle("sel", connectSel.indexOf(n.getAttribute("data-node")) !== -1);
+          n.classList.toggle("sel", !!set[n.getAttribute("data-node")]);
         });
         updateConnectBar();
       }
@@ -3089,41 +3148,46 @@
           if (i === -1) connectSel.push(id); else connectSel.splice(i, 1);
           buzz(8); refreshSelMarks(); return;
         }
-        if (connectSel.indexOf(id) !== -1) { toast("選択中の曲は対象にできません"); return; }
+        if (selectedIdSet()[id]) { toast("選択中の曲は対象にできません"); return; }
         applyConnection([id]);
       }
       function connectTapGroup(members) {
-        if (connectPhase === "pick") {
-          var allIn = members.every(function (id) { return connectSel.indexOf(id) !== -1; });
-          members.forEach(function (id) {
-            var i = connectSel.indexOf(id);
-            if (allIn) { if (i !== -1) connectSel.splice(i, 1); }
-            else if (i === -1) connectSel.push(id);
-          });
-          buzz(8); refreshSelMarks(); return;
-        }
+        if (connectPhase === "pick") { toggleBundle([members.slice()]); return; }
         applyConnection(members.slice());
       }
-      /* 選択（前提側）を対象へ接続：1枚なら新しいORグループ、複数なら1つのANDグループとして追加。
-         対象がグループのときは全メンバーへ同じ前提グループを追加する（グループ同士の接続） */
+      /* ORピル：前提フェイズではその曲の前提グループ一式を、構成を保ったまま丸ごと選択する。
+         対象フェイズでは、その曲へ選択中の前提をOR候補として追加する（＝対象はピルの持ち主の曲） */
+      function connectTapOrSet(groups, toId) {
+        if (connectPhase === "pick") { toggleBundle(groups); return; }
+        if (!toId) return;
+        if (selectedIdSet()[toId]) { toast("選択中の曲は対象にできません"); return; }
+        applyConnection([toId]);
+      }
+      /* 選択（前提側）を対象へ接続：個別選択は1つのANDグループとして、束はグループ構成のまま追加。
+         対象がグループのときは全メンバーへ同じ前提を追加する（グループ同士の接続） */
       function applyConnection(targetIds) {
-        if (connectSel.length === 0) return;
-        var sel = connectSel.slice();
+        var units = selectedUnits();
+        if (units.length === 0) return;
         var added = 0, names = [];
         targetIds.forEach(function (tid) {
           var t = byId(tid); if (!t) return;
-          var grp = sel.filter(function (id) { return id !== tid; });
-          if (grp.length === 0) return;
           var gs = cleanGroups(t);
-          var exists = grp.length === 1
-            ? hasEdge(grp[0], tid)
-            : gs.some(function (g) { return g.length === grp.length && grp.every(function (id) { return g.indexOf(id) !== -1; }); });
-          if (exists) return; /* 既存グループへ混ぜず、重複も作らない */
-          var ngs = gs.concat([grp]); /* 独立したグループとして追加＝ORの選択肢になる */
+          var fresh = [];
+          units.forEach(function (u) {
+            var grp = u.filter(function (id) { return id !== tid; });
+            if (grp.length === 0) return;
+            var dup = gs.concat(fresh).some(function (g) {
+              return g.length === grp.length && grp.every(function (id) { return g.indexOf(id) !== -1; });
+            });
+            if (!dup) fresh.push(grp);
+          });
+          if (fresh.length === 0) return;
+          var ngs = gs.concat(fresh); /* 独立したグループとして追加＝ORの選択肢になる */
           if (createsCycle(tid, ngs)) return;
           t.prereqGroups = ngs; added++; names.push(t.title);
         });
         connectSel = [];
+        connectBundles = [];
         connectPhase = "pick";
         if (added > 0) {
           saveState(); renderAll();
@@ -3559,11 +3623,11 @@
       $("#rmConnectBtn").addEventListener("click", function () { setConnectMode(!connectMode); });
       $("#rmPhaseBtn").addEventListener("click", function () {
         if (!connectMode) return;
-        if (connectPhase === "pick" && connectSel.length === 0) return;
+        if (connectPhase === "pick" && selectedCount() === 0) return;
         connectPhase = connectPhase === "pick" ? "target" : "pick";
         buzz(8); updateConnectBar();
       });
-      $("#rmClearSelBtn").addEventListener("click", function () { connectSel = []; connectPhase = "pick"; refreshSelMarks(); });
+      $("#rmClearSelBtn").addEventListener("click", function () { connectSel = []; connectBundles = []; connectPhase = "pick"; refreshSelMarks(); });
       $("#rmDoneBtn").addEventListener("click", function () { setConnectMode(false); });
       $("#overviewSvgWrap").addEventListener("click", function (ev) {
         var g = ev.target.closest ? ev.target.closest("[data-ov]") : null;
@@ -3677,19 +3741,28 @@
       });
       $("#roadmapCanvas").addEventListener("click", function (ev) {
         if (lastDragMoved && Date.now() - lastDragEnd < 300) return; /* ドラッグ直後のクリックは無視 */
-        var hit = ev.target.closest ? ev.target.closest(".edge-hit") : null;
-        if (hit) { askRemoveEdge(hit.getAttribute("data-from"), hit.getAttribute("data-to")); return; }
         if (connectMode) {
+          /* つなぐモード中は線の切断より選択を優先する（線の当たり判定自体もCSSで無効化済み） */
           var g = ev.target.closest ? (ev.target.closest(".and-hit") || ev.target.closest(".and-frame-hit")) : null;
           if (g) {
             var members = (g.getAttribute("data-members") || "").split(",").filter(function (s) { return s; });
             if (members.length) connectTapGroup(members);
             return;
           }
+          var oh = ev.target.closest ? ev.target.closest(".or-hit") : null;
+          if (oh) {
+            var ogs = (oh.getAttribute("data-groups") || "").split("|").map(function (s) {
+              return s.split(",").filter(function (x) { return x; });
+            }).filter(function (gr) { return gr.length > 0; });
+            if (ogs.length) connectTapOrSet(ogs, oh.getAttribute("data-to"));
+            return;
+          }
           var cnode = ev.target.closest ? ev.target.closest("[data-node]") : null;
           if (cnode) connectTapNode(cnode.getAttribute("data-node"));
           return;
         }
+        var hit = ev.target.closest ? ev.target.closest(".edge-hit") : null;
+        if (hit) { askRemoveEdge(hit.getAttribute("data-from"), hit.getAttribute("data-to")); return; }
         var node = ev.target.closest ? ev.target.closest("[data-node]") : null;
         if (node) openEditor(node.dataset.node);
       });
@@ -4155,6 +4228,27 @@
             });
           });
         }
+      })();
+    </script>
+
+    <!-- ===== PWA: Service Worker 登録（オフラインキャッシュ用） =====
+         sw.js はデプロイ側（gh-pages）で同じ階層に配置する。
+         プレビュー環境など sw.js が無い場所では、失敗を握りつぶして静かに無効化し、
+         コンソールエラーも例外も出さず、本体・Firebase の動作には一切影響させない。 -->
+    <script>
+      (function () {
+        "use strict";
+        if (!("serviceWorker" in navigator)) return;
+        function registerSW() {
+          try {
+            var reg = navigator.serviceWorker.register("sw.js");
+            if (reg && typeof reg.catch === "function") {
+              reg.catch(function () { /* sw.js が無い／登録できない環境では何もしない */ });
+            }
+          } catch (e) { /* 登録失敗時は PWA キャッシュなしで通常動作する */ }
+        }
+        if (document.readyState === "complete") registerSW();
+        else window.addEventListener("load", registerSW);
       })();
     </script>
   </body>
