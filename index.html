@@ -10,17 +10,15 @@
          manifest.webmanifest・sw.js・アイコン画像はデプロイ側（gh-pages）で
          このページと同じ階層に別ファイルとして配置する。 -->
     <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131314" media="(prefers-color-scheme: dark)" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="演奏したい曲リスト" />
     <meta name="application-name" content="演奏したい曲リスト" />
     <link rel="apple-touch-icon" href="icon-192.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+    <!-- 書体は端末のシステムサンセリフを使う（Webフォントは読み込まない） -->
     <style>
       :root {
         --bg: #f6f4ef;
@@ -1155,6 +1153,239 @@
       @media (prefers-color-scheme: dark) {
         #view-roadmap .rm-toolbar button#rmConnectBtn[aria-pressed="true"] { color: #1d1216; }
       }
+    </style>
+
+    <style id="material-clean">
+      /* ===== 簡潔なUI（Material 3 / Googleアプリ風）: 最終上書きレイヤー =====
+         白〜ごく薄いグレーの地、アクセントはGoogleブルー1色。
+         ステータス色は淡い背景とグレーの濃淡で最小限に区別する。
+         機能（進捗ゲージ兼チップ、CLEARスタンプ、効果音・振動）はそのまま、
+         見た目だけをこのトーンに合わせる。 */
+
+      :root {
+        --bg: #f8f9fa;
+        --surface: #ffffff;
+        --surface-2: #eef1f3;
+        --ink: #202124;
+        --ink-soft: #5f6368;
+        --ink-faint: #9aa0a6;
+        --line: #dadce0;
+        --accent: #1a73e8;
+        --accent-soft: #e8f0fe;
+        --on-accent: #ffffff;
+        --fab-bg: #d3e3fd;
+        --fab-fg: #0b57d0;
+        /* 旧「金色」は装飾から外し、譜読み中の進捗を示す落ち着いたブルーとして使う */
+        --gold: #3f74d6;
+        --gold-soft: #e8f0fe;
+        --ok: #188038;
+        --ok-soft: #e6f4ea;
+        --warn: #b06000;
+        --warn-soft: #fef7e0;
+        --danger: #d93025;
+        --danger-soft: #fce8e6;
+        --era-baroque: #5f6368;
+        --era-classical: #1a73e8;
+        --era-romantic: #5b8def;
+        --era-modern: #188038;
+        --era-other: #80868b;
+        --shadow: 0 1px 2px rgba(60, 64, 67, .08), 0 1px 4px rgba(60, 64, 67, .06);
+        --radius: 12px;
+        --ease-out: cubic-bezier(.2, 0, 0, 1);
+        --ease-spring: cubic-bezier(.2, 0, 0, 1);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131314;
+          --surface: #1e1f20;
+          --surface-2: #2a2b2e;
+          --ink: #e3e3e3;
+          --ink-soft: #c4c7c5;
+          --ink-faint: #8e918f;
+          --line: #444746;
+          --accent: #a8c7fa;
+          --accent-soft: #004a77;
+          --on-accent: #0a2f5c;
+          --fab-bg: #004a77;
+          --fab-fg: #c2e7ff;
+          --gold: #8ab4f8;
+          --gold-soft: #004a77;
+          --ok: #81c995;
+          --ok-soft: #1d3325;
+          --warn: #f0a35e;
+          --warn-soft: #3a2c14;
+          --danger: #f28b82;
+          --danger-soft: #402522;
+          --era-baroque: #9aa0a6;
+          --era-classical: #a8c7fa;
+          --era-romantic: #7aa5e8;
+          --era-modern: #81c995;
+          --era-other: #80868b;
+          --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 1px 4px rgba(0, 0, 0, .35);
+        }
+        /* 濃いブルー地に乗る文字は濃色にする（塗りボタン類） */
+        .btn.primary, .stat-strip button[aria-pressed="true"],
+        #view-roadmap .rm-toolbar button[aria-pressed="true"],
+        #view-roadmap .rm-toolbar button#rmConnectBtn[aria-pressed="true"],
+        #view-roadmap .rm-connect-bar button#rmPhaseBtn { color: var(--on-accent); }
+      }
+
+      /* --- 書体：システムサンセリフに統一し、階層はサイズとグレーの濃淡で付ける --- */
+      body, .card h3, .rnode .t, h2.section, .dlg-body h2, .empty .big,
+      .profile-avatar, .account-avatar, .account-box h3, .sched-row .what .title,
+      .cal-guide h2, .ws-import-item .ttl, .pd-head h2, #moreDlg h2 {
+        font-family: Roboto, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif !important;
+      }
+      body { letter-spacing: .01em; }
+      .card h3 { font-size: 16px; font-weight: 500; line-height: 1.45; }
+      h2.section, .dlg-body h2, .empty .big { font-weight: 500; }
+      .rnode .t { font-weight: 500; }
+      .sched-row .what .title, .ws-import-item .ttl, .account-box h3 { font-weight: 500; }
+
+      /* --- 反応は控えめに（拡大・跳ねる動きを弱める） --- */
+      button:active, .btn:active { transform: scale(.98); }
+      .card:active { transform: none; border-color: var(--ink-faint); }
+      .card.quest-ready, .rnode.is-ready { animation: none; border-color: var(--accent); }
+      .card.quest-ready .chip { animation: none; }
+      .tabs.bottom-nav button[aria-selected="true"] svg { animation: none; transform: none; }
+
+      /* --- ヘッダー（プロフィール） --- */
+      .profile-bar { background: var(--surface); }
+      .profile-avatar { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+      .account-avatar { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+
+      /* --- アラート：淡い面＋細枠だけ --- */
+      .alert { border: 1px solid var(--line); background: var(--warn-soft); border-radius: 12px; }
+      .alert.overdue { border-color: var(--line); background: var(--danger-soft); }
+
+      /* --- ボタン：ピル形、塗りはブルー1色、影は落とす --- */
+      .btn { border-radius: 999px; border-color: var(--line); font-weight: 500; box-shadow: none; }
+      .btn.primary { background: var(--accent); border-color: transparent; color: var(--on-accent); box-shadow: none; font-weight: 500; }
+      .btn.primary:active { transform: scale(.98); box-shadow: none; }
+      .btn.danger { color: var(--danger); border-color: var(--line); }
+      .btn.fab, .btn.primary.fab {
+        background: var(--fab-bg); color: var(--fab-fg); border-color: transparent;
+        border-radius: 16px; box-shadow: 0 4px 12px rgba(60, 64, 67, .25); font-weight: 500;
+      }
+      .btn.fab:active, .btn.primary.fab:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(60, 64, 67, .25); }
+      .iconbtn { border-radius: 999px; border-color: var(--line); }
+
+      /* --- 入力：検索はグレーのピル、セレクトは細枠 --- */
+      .filters .searchbox input {
+        background: var(--surface-2); border-color: transparent; box-shadow: none; border-radius: 999px;
+      }
+      .filters .searchbox input:focus { background: var(--surface); border-color: var(--accent); }
+      input[type="text"], input[type="url"], input[type="number"], input[type="date"], input[type="password"], select, textarea {
+        border-color: var(--line); border-radius: 10px;
+      }
+
+      /* --- 段階チップ（絞り込み）：選択中だけブルーの塗り --- */
+      .stat-strip button { background: var(--surface); border-color: var(--line); color: var(--ink-soft); font-weight: 500; box-shadow: none; }
+      .stat-strip button[aria-pressed="true"] { background: var(--accent); border-color: transparent; color: var(--on-accent); box-shadow: none; font-weight: 500; }
+
+      /* --- カード：白＋細枠のみ。ステータスの色は持ち込まない --- */
+      .card { border: 1px solid var(--line); border-radius: 12px; box-shadow: none; background-image: none; }
+      .card.st-want { border-style: solid; }
+      .card.st-notstarted, .card.st-reading, .card.st-doing, .card.st-finishing {
+        border-color: var(--line); border-width: 1px; background-image: none;
+      }
+      .card.st-done { background-image: none; }
+      .card .composer { color: var(--ink-soft); }
+      .card .foot { border-top-color: var(--line); }
+
+      /* --- チップ：淡い背景で最小限の色づけ --- */
+      /* 段階チップの進捗ゲージは background-image で描くため、ここは background-color のみ触る */
+      .chip { background-color: var(--surface-2); color: var(--ink-soft); border: 1px solid transparent; border-radius: 8px; font-weight: 500; }
+      .chip.era { background-color: var(--surface-2); color: var(--ink-soft); font-weight: 500; }
+      .chip.status-want { background-color: transparent; border-color: var(--line); border-style: dashed; color: var(--ink-soft); }
+      .chip.status-notstarted { background-color: var(--surface); border-color: var(--line); color: var(--ink-soft); font-weight: 500; }
+      .chip.status-reading, .chip.status-doing { background-color: var(--accent-soft); color: var(--accent); font-weight: 500; }
+      .chip.status-finishing { background-color: var(--accent-soft); color: var(--accent); font-weight: 700; }
+      .chip.status-done { background-color: var(--ok-soft); color: var(--ok); font-weight: 500; }
+      @media (prefers-color-scheme: dark) {
+        .chip.status-reading, .chip.status-doing, .chip.status-finishing { color: var(--accent); }
+      }
+      button.chip.status-notstarted { border-color: var(--line); }
+      .stars { color: var(--accent); }
+      .stars .off { color: var(--line); }
+      .starbtn.on { color: var(--accent); }
+
+      /* --- CLEARスタンプ：単色の輪郭スタンプに --- */
+      .card.just-cleared::after {
+        content: "CLEAR"; color: var(--accent); background: transparent;
+        border: 2px solid var(--accent); border-radius: 6px; letter-spacing: .14em;
+      }
+
+      /* --- 下部ナビ（Material 3 ナビゲーションバー） --- */
+      .tabs.bottom-nav { background: var(--surface-2); border-top: 0; }
+      .tabs.bottom-nav button { background: transparent; color: var(--ink-soft); font-weight: 500; border-radius: 0; }
+      .tabs.bottom-nav button svg {
+        width: 22px; height: 22px; box-sizing: content-box;
+        padding: 4px 14px; border-radius: 999px; background: transparent;
+      }
+      .tabs.bottom-nav button[aria-selected="true"] { background: transparent; color: var(--ink); box-shadow: none; font-weight: 500; }
+      .tabs.bottom-nav button[aria-selected="true"] svg { background: var(--accent-soft); }
+      .nav-badge { background: var(--danger); color: #fff; }
+
+      /* --- ダイアログ／ボトムシート --- */
+      dialog { border: 0; border-radius: 28px 28px 0 0; box-shadow: 0 12px 32px rgba(60, 64, 67, .3); }
+      @media (min-width: 720px) { dialog { border-radius: 28px; } }
+      dialog::backdrop { background: rgba(32, 33, 36, .45); }
+      fieldset { border-color: var(--line); border-radius: 16px; }
+      .pickchip { border-color: var(--line); }
+      .pickchip[aria-pressed="true"] { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 500; }
+      .toast { border-radius: 10px; }
+
+      /* --- 「その他」シート内 --- */
+      .account-box { border-color: var(--line); border-radius: 16px; box-shadow: none; }
+      .account-box h3 .account-badge.on { background: var(--ok-soft); color: var(--ok); }
+      .google-btn { border-radius: 999px; border-color: var(--line); font-weight: 500; }
+      @media (prefers-color-scheme: dark) { .google-btn { background: var(--surface); color: var(--ink); } }
+      .cal-guide { border-color: var(--line); border-radius: 12px; box-shadow: none; }
+
+      /* --- 予定 --- */
+      .sched-row { border-color: var(--line); border-radius: 12px; box-shadow: none; }
+      .kind.start { background: var(--ok-soft); color: var(--ok); }
+      .kind.deadline { background: var(--warn-soft); color: var(--warn); }
+      .kind.concert { background: var(--accent-soft); color: var(--accent); }
+      .kind.est { background: var(--surface-2); color: var(--ink-soft); }
+      .est-guide { background: var(--surface); border-color: var(--line); border-radius: 12px; }
+      .sched-row.estimated { background: transparent; }
+      .sched-row.estimated.est-overdue { border-color: var(--warn); }
+
+      /* --- ロードマップ：白カード＋細枠、線とピルはブルー／グレー --- */
+      .roadmap-frame { background: var(--bg); }
+      .rnode { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 1px 3px rgba(60, 64, 67, .12); }
+      .rnode.st-want { border-style: dashed; }
+      .rnode.st-notstarted, .rnode.st-reading, .rnode.st-doing, .rnode.st-finishing {
+        border-color: var(--line); border-width: 1px; background-image: none;
+      }
+      .rnode.st-done { border-color: var(--line); }
+      .rnode.is-done { opacity: .75; }
+      .rnode .t { font-size: 13.5px; }
+      .rnode .np-track { background: var(--surface-2); }
+      .rnode .st-label.st-reading, .rnode .st-label.st-doing { color: var(--gold); }
+      .rnode .st-label.st-finishing { color: var(--accent); }
+      .rnode.stack-target { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      .rnode.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      .rnode .port { border-color: var(--accent); }
+      .legend .swatch.and, .legend .swatch.solid { border-top-color: var(--ink-faint); }
+      .legend .swatch.or, .legend .swatch.dash { border-top: 3px dashed var(--accent); }
+      .legend .swatch.enclose { border-color: var(--ink-faint); background: var(--surface-2); }
+      .lpill.and { background: var(--ink-soft); color: var(--surface); }
+      .lpill.or { background: var(--surface); color: var(--accent); border: 1.5px solid var(--accent); }
+      .ov-frame { border-color: var(--line); border-radius: 12px; box-shadow: none; }
+      .ov-ring.ring-want { border-color: var(--ink-faint); }
+      #view-roadmap .ws-bar { border-bottom-color: var(--line); box-shadow: 0 1px 4px rgba(60, 64, 67, .1); }
+      #view-roadmap .roadmap-info > summary { border-color: var(--line); box-shadow: 0 1px 4px rgba(60, 64, 67, .12); }
+      #view-roadmap .roadmap-info[open] { border-color: var(--line); box-shadow: 0 4px 16px rgba(60, 64, 67, .14); }
+      #view-roadmap .rm-toolbar { border-color: var(--line); box-shadow: 0 4px 16px rgba(60, 64, 67, .16); }
+      #view-roadmap .rm-connect-bar { border: 1px solid var(--accent); border-radius: 16px; box-shadow: 0 4px 16px rgba(60, 64, 67, .16); }
+
+      /* --- 空状態 --- */
+      .empty { border-color: var(--line); border-radius: 16px; }
+      .ws-import-item[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+      .ws-import-item[aria-pressed="true"] .mark { color: var(--accent); }
     </style>
   </head>
   <body>
@@ -2668,7 +2899,7 @@
             var members = g.filter(function (id) { return outC[id]; });
             if (members.length === 0) return;
             var isAnd = members.length > 1;
-            var color = multi ? "var(--gold)" : (isAnd ? "var(--accent)" : "var(--ink-faint)");
+            var color = multi ? "var(--accent)" : (isAnd ? "var(--ink-soft)" : "var(--ink-faint)");
             var tGi = multi ? { x: target.x, y: target.y + (gi - (gs.length - 1) / 2) * 12 } : target;
             if (isAnd) {
               var maxOutX = Math.max.apply(null, members.map(function (id) { return outC[id].x; }));
@@ -2680,7 +2911,7 @@
               var bx = Math.min.apply(null, xs) - 14, by = Math.min.apply(null, ys) - 20;
               var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
               var bh = Math.max.apply(null, ye) - Math.min.apply(null, ys) + 34;
-              parts.push('<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.5" stroke="var(--accent)" stroke-width="1.5"/>');
+              parts.push('<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--surface-2)" fill-opacity="0.55" stroke="var(--ink-faint)" stroke-width="1.5"/>');
               members.forEach(function (id) {
                 var b = bezierD(outC[id], J);
                 parts.push('<path d="' + b.d + '" fill="none" stroke="' + color + '" stroke-width="3"' + (multi || !isDoneId(id) ? ' stroke-dasharray="7 5"' : "") + "/>");
@@ -2798,9 +3029,9 @@
       }
       function edgePill(x, y, text, kind) {
         var w = text.length * 9 + 18;
-        var fill = kind === "and" ? "var(--accent)" : "var(--gold-soft)";
-        var fg = kind === "and" ? "var(--surface)" : "var(--gold)";
-        var stroke = kind === "and" ? "" : ' stroke="var(--gold)" stroke-width="1.5"';
+        var fill = kind === "and" ? "var(--ink-soft)" : "var(--accent-soft)";
+        var fg = kind === "and" ? "var(--surface)" : "var(--accent)";
+        var stroke = kind === "and" ? "" : ' stroke="var(--accent)" stroke-width="1.5"';
         return '<g><rect x="' + (x - w / 2) + '" y="' + (y - 10) + '" width="' + w + '" height="20" rx="10" fill="' + fill + '"' + stroke + "/>" +
           '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="' + fg + '">' + text + "</text></g>";
       }
@@ -2808,7 +3039,7 @@
       function andPill(x, y, toId, members) {
         return '<g class="and-hit" data-to="' + toId + '" data-members="' + members.join(",") + '">' +
           '<rect x="' + (x - 32) + '" y="' + (y - 16) + '" width="64" height="32" fill="rgba(0,0,0,0)"/>' +
-          '<rect x="' + (x - 21) + '" y="' + (y - 10) + '" width="42" height="20" rx="10" fill="var(--accent)"/>' +
+          '<rect x="' + (x - 21) + '" y="' + (y - 10) + '" width="42" height="20" rx="10" fill="var(--ink-soft)"/>' +
           '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="var(--surface)">AND</text></g>';
       }
       /* ORピル：その曲の前提グループ一式（ORの集合）を表す。つなぐモードではタップで
@@ -2818,8 +3049,8 @@
         var enc = groups.map(function (g) { return g.join(","); }).join("|");
         return '<g class="or-hit" data-to="' + toId + '" data-groups="' + enc + '">' +
           '<rect x="' + (x - 32) + '" y="' + (y - 16) + '" width="64" height="32" fill="rgba(0,0,0,0)"/>' +
-          '<rect x="' + (x - 18) + '" y="' + (y - 10) + '" width="36" height="20" rx="10" fill="var(--gold-soft)" stroke="var(--gold)" stroke-width="1.5"/>' +
-          '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="var(--gold)">OR</text></g>';
+          '<rect x="' + (x - 18) + '" y="' + (y - 10) + '" width="36" height="20" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>' +
+          '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.08em" fill="var(--accent)">OR</text></g>';
       }
       function arrowHead(pt, color) {
         /* 矢じりの先端は終点の点の中心そのもの。接線は水平なので真横から差し込む */
@@ -2956,7 +3187,7 @@
             var members = g.filter(function (id) { return outC[id]; });
             if (members.length === 0) return;
             var isAnd = members.length > 1;
-            var color = multi ? "var(--gold)" : (isAnd ? "var(--accent)" : "var(--ink-faint)");
+            var color = multi ? "var(--accent)" : (isAnd ? "var(--ink-soft)" : "var(--ink-faint)");
             /* ORでは各グループの線が対象の少しずらした点へ個別に届くようにし、常に金色破線で描く。
                単独接続のときだけ従来規則（演奏済み発＝実線／未演奏＝点線） */
             var tGi = multi ? { x: target.x, y: target.y + (gi - (gs.length - 1) / 2) * 14 } : target;
@@ -2977,7 +3208,7 @@
               var bx = Math.min.apply(null, xs) - 14, by = Math.min.apply(null, ys) - 20;
               var bw = Math.max.apply(null, xe) - Math.min.apply(null, xs) + 28;
               var bh = Math.max.apply(null, ye) - Math.min.apply(null, ys) + 34;
-              enclosures += '<g><rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--accent-soft)" fill-opacity="0.55" stroke="var(--accent)" stroke-width="1.5"/></g>' +
+              enclosures += '<g><rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="var(--surface-2)" fill-opacity="0.55" stroke="var(--ink-faint)" stroke-width="1.5"/></g>' +
                 '<rect class="and-frame-hit" data-to="' + p.id + '" data-members="' + members.join(",") + '" x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" rx="14" fill="rgba(0,0,0,0)" stroke="rgba(0,0,0,0)" stroke-width="18"/>' +
                 andPill(bx + 42, by, p.id, members);
               members.forEach(function (id) {
